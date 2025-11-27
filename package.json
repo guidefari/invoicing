@@ -5,12 +5,14 @@
   "private": true,
   "scripts": {
     "start": "bun src/index.tsx",
+    "server": "bun src/server.ts",
     "prepare": "effect-language-service patch",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@effect/language-service": "^0.57.0",
     "@types/bun": "latest",
+    "drizzle-kit": "^0.31.7",
     "effect-solutions": "^0.4.13"
   },
   "peerDependencies": {
@@ -23,6 +25,7 @@
     "@effect/platform": "^0.93.4",
     "@opentui/core": "^0.1.50",
     "@opentui/solid": "^0.1.50",
+    "drizzle-orm": "^0.44.7",
     "effect": "^3.19.7",
     "solid-js": "^1.9.10"
   }

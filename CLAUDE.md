@@ -1,4 +1,4 @@
-
+- read `/Users/guidefari/source/oss/opentui/packages/solid/examples` for ui code examples.
 
 Default to using Bun instead of Node.js.
 
@@ -128,14 +128,18 @@ Ask the user which mode they prefer:
 1. Introduce yourself as their Effect setup guide
 2. Ask which mode they prefer (interactive or autonomous)
 3. Assess repository with a single command:
+
    ```bash
    ls -la package.json tsconfig.json bun.lock pnpm-lock.yaml package-lock.json .vscode AGENTS.md CLAUDE.md .claude .cursorrules 2>/dev/null; file AGENTS.md CLAUDE.md 2>/dev/null | grep -i link
    ```
+
    This finds all relevant files and detects symlinks. From lock file, determine package manager (bun/pnpm/npm). If multiple lock files, ask which to use. If none, ask preference.
+
 4. Check Effect Solutions CLI: run `effect-solutions list`. If missing, install. If output shows update available, update before continuing.
 5. Create todo list (if you have the tool)
 
 **Checklist:**
+
 - [ ] Initialize project (if needed)
 - [ ] Install Effect dependencies
 - [ ] Effect Language Service setup
@@ -150,6 +154,7 @@ Ask the user which mode they prefer:
 ## Initialize Project (if needed)
 
 **Only if `package.json` doesn't exist:**
+
 - Read: `effect-solutions show project-setup`
 - Follow initialization guidance
 - Run: `[bun/pnpm/npm] init`
@@ -177,6 +182,7 @@ This adds compile-time diagnostics for Effect: catches pipeline errors, validate
 - Follow setup instructions: install package, configure tsconfig plugin, add prepare script, run patch
 
 **VS Code/Cursor Settings:**
+
 - If `.vscode` exists: set up settings automatically
 - If not: ask if they use VS Code or Cursor, then create settings
 
@@ -229,11 +235,13 @@ The Effect Solutions CLI provides curated best practices and patterns for Effect
 - Check if `~/.local/share/effect-solutions/effect` exists
 
 **If exists:**
+
 - Inform them it's already cloned
 - Run `git pull` to get latest changes
 - If pull fails: explain issue, ask about re-cloning
 
 **If doesn't exist:**
+
 - Ask if they want to clone (provides local implementation examples and API details)
 - If yes: clone `https://github.com/Effect-TS/effect.git` to `~/.local/share/effect-solutions/effect`
 
@@ -249,6 +257,7 @@ Add to agent files between markers (after CLI commands):
 ## Summary
 
 Provide summary:
+
 - Mode used (interactive/autonomous)
 - Package manager
 - Steps completed vs skipped (with reasons)
