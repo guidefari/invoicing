@@ -1,0 +1,94 @@
+{
+  "info": {
+    "name": "Invoice System - Customers",
+    "description": "CRUD operations for customer management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "List Customers",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/customers",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "customers"]
+        }
+      }
+    },
+    {
+      "name": "Get Customer by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/customers/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "customers", "1"]
+        }
+      }
+    },
+    {
+      "name": "Create Customer",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Acme Corporation\",\n  \"vatNumber\": \"VAT123456789\",\n  \"streetAddress\": \"123 Main Street\",\n  \"city\": \"Johannesburg\",\n  \"postalCode\": \"2000\",\n  \"country\": \"South Africa\",\n  \"email\": \"contact@acme.com\",\n  \"phone\": \"+27 11 123 4567\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/customers",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "customers"]
+        }
+      }
+    },
+    {
+      "name": "Update Customer",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Acme Corporation (Updated)\",\n  \"vatNumber\": \"VAT123456789\",\n  \"streetAddress\": \"456 New Avenue\",\n  \"city\": \"Cape Town\",\n  \"postalCode\": \"8001\",\n  \"country\": \"South Africa\",\n  \"email\": \"updated@acme.com\",\n  \"phone\": \"+27 21 987 6543\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/customers/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "customers", "1"]
+        }
+      }
+    },
+    {
+      "name": "Delete Customer",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/customers/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "customers", "1"]
+        }
+      }
+    }
+  ]
+}

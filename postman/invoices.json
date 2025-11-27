@@ -1,0 +1,61 @@
+{
+  "info": {
+    "name": "Invoice System - Invoices",
+    "description": "CRUD operations for invoice management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "List Invoices",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/invoices",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "invoices"]
+        }
+      }
+    },
+    {
+      "name": "Get Invoice by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/invoices/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "invoices", "1"]
+        }
+      }
+    },
+    {
+      "name": "Create Invoice",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerId\": 1,\n  \"dueDate\": \"2025-01-15\",\n  \"vatRate\": 15,\n  \"notes\": \"Thank you for your business!\",\n  \"lineItems\": [\n    {\n      \"productId\": 1,\n      \"description\": \"Web Development - Landing Page\",\n      \"quantity\": 1,\n      \"unitPrice\": 15000.00,\n      \"additionalNotes\": \"Responsive design included\"\n    },\n    {\n      \"productId\": null,\n      \"description\": \"Custom Logo Design\",\n      \"quantity\": 1,\n      \"unitPrice\": 3000.00,\n      \"additionalNotes\": \"3 revision rounds\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/invoices",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "invoices"]
+        }
+      }
+    }
+  ]
+}
