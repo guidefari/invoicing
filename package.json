@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "start": "bun src/index.tsx",
     "prepare": "effect-language-service patch",
     "typecheck": "tsc --noEmit"
   },
@@ -22,6 +23,7 @@
     "@effect/platform": "^0.93.4",
     "@opentui/core": "^0.1.50",
     "@opentui/solid": "^0.1.50",
-    "effect": "^3.19.7"
+    "effect": "^3.19.7",
+    "solid-js": "^1.9.10"
   }
 }
