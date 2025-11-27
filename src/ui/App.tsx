@@ -1,6 +1,10 @@
 import { createSignal, Switch, Match } from "solid-js"
 import { useKeyboard, useRenderer } from "@opentui/solid"
 import { TextAttributes } from "@opentui/core"
+import { CustomerScreen } from "./screens/CustomerScreen.tsx"
+import { ProductScreen } from "./screens/ProductScreen.tsx"
+import { InvoiceScreen } from "./screens/InvoiceScreen.tsx"
+import { SettingsScreen } from "./screens/SettingsScreen.tsx"
 
 type Screen = "main-menu" | "customers" | "products" | "invoices" | "settings"
 
@@ -58,19 +62,15 @@ export function App() {
         <Match when={currentScreen() === "main-menu"}>
           <MainMenu />
         </Match>
-
         <Match when={currentScreen() === "customers"}>
           <CustomerScreen />
         </Match>
-
         <Match when={currentScreen() === "products"}>
           <ProductScreen />
         </Match>
-
         <Match when={currentScreen() === "invoices"}>
           <InvoiceScreen />
         </Match>
-
         <Match when={currentScreen() === "settings"}>
           <SettingsScreen />
         </Match>
@@ -114,78 +114,6 @@ function MenuOption(props: { number: string; label: string; description: string 
         </text>
         <text style={{ fg: "#888888" }}>
           {props.description}
-        </text>
-      </box>
-    </box>
-  )
-}
-
-function CustomerScreen() {
-  return (
-    <box flexDirection="column">
-      <text style={{ fg: "#00FF00" }} attributes={TextAttributes.BOLD} marginBottom={2}>
-        📋 Customer Management
-      </text>
-      <text style={{ fg: "#AAAAAA" }}>
-        Customer list will be implemented here...
-      </text>
-      <box marginTop={2} paddingTop={1}  borderColor="#333333">
-        <text style={{ fg: "#666666" }}>
-          Press [Esc] to return to main menu
-        </text>
-      </box>
-    </box>
-  )
-}
-
-function ProductScreen() {
-  return (
-    <box flexDirection="column">
-      <text style={{ fg: "#FFAA00" }} attributes={TextAttributes.BOLD} marginBottom={2}>
-        📦 Product Catalog
-      </text>
-      <text style={{ fg: "#AAAAAA" }}>
-        Product list will be implemented here...
-      </text>
-      <box marginTop={2} paddingTop={1}  borderColor="#333333">
-        <text style={{ fg: "#666666" }}>
-          Press [Esc] to return to main menu
-        </text>
-      </box>
-    </box>
-  )
-}
-
-function InvoiceScreen() {
-  return (
-    <box flexDirection="column">
-      <text style={{ fg: "#FF00FF" }} attributes={TextAttributes.BOLD} marginBottom={2}>
-        💰 Invoices
-      </text>
-      <text style={{ fg: "#AAAAAA" }}>
-        Invoice list will be implemented here...
-      </text>
-      <box marginTop={2} paddingTop={1} borderColor="#333333">
-        <text style={{ fg: "#666666" }}>
-          Press [Esc] to return to main menu
-        </text>
-      </box>
-    </box>
-  )
-}
-
-function SettingsScreen() {
-  return (
-    <box flexDirection="column">
-      <text style={{ fg: "#00AAFF" }} attributes={TextAttributes.BOLD} marginBottom={2}>
-        ⚙️ Settings
-      </text>
-      <text style={{ fg: "#AAAAAA" }}>
-        Business information settings will be implemented here...
-      </text>
-      <box marginTop={2} paddingTop={1}  borderColor="#333333">
-        <text style={{ fg: "#666666" }}>
-          Press [Esc] to return to main menu
         </text>
       </box>
     </box>
