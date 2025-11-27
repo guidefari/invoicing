@@ -1,5 +1,5 @@
 import { For } from "solid-js"
-import { box, text, useInput } from "@opentui/core"
+import { useKeyboard } from "@opentui/solid"
 
 type Screen = "main-menu" | "customers" | "products" | "invoices" | "settings"
 
@@ -15,8 +15,8 @@ export function MainMenu(props: MainMenuProps) {
     { key: "4", label: "Business Settings", screen: "settings" as const, icon: "⚙️" },
   ]
 
-  useInput((input) => {
-    const item = menuItems.find((m) => m.key === input)
+  useKeyboard((key) => {
+    const item = menuItems.find((m) => m.key === key.raw)
     if (item) {
       props.onNavigate(item.screen)
     }

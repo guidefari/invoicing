@@ -1,14 +1,11 @@
 import { createSignal, createEffect, For, Show } from "solid-js"
-import { box, text, useInput } from "@opentui/core"
+import { useKeyboard } from "@opentui/solid"
 import { Effect } from "effect"
 import { CustomerService } from "../services/CustomerService.ts"
+import { AppLayer } from "../runtime.ts"
 import type { Customer } from "../types/index.ts"
 
-interface CustomerListProps {
-  onBack: () => void
-}
-
-export function CustomerList(props: CustomerListProps) {
+export function CustomerList() {
   const [customers, setCustomers] = createSignal<Customer[]>([])
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
@@ -17,7 +14,7 @@ export function CustomerList(props: CustomerListProps) {
     const program = Effect.gen(function* () {
       const service = yield* CustomerService
       return yield* service.list()
-    })
+    }).pipe(Effect.provide(AppLayer))
 
     Effect.runPromise(program)
       .then((data) => {
@@ -30,8 +27,8 @@ export function CustomerList(props: CustomerListProps) {
       })
   })
 
-  useInput((input) => {
-    if (input === "n") {
+  useKeyboard((key) => {
+    if (key.raw === "n") {
       // TODO: Navigate to create customer form
     }
   })
