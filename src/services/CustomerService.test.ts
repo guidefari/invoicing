@@ -68,8 +68,8 @@ describe("CustomerService", () => {
     )
 
     expect(customers).toHaveLength(2)
-    expect(customers[0].name).toBe("Customer One")
-    expect(customers[1].name).toBe("Customer Two")
+    expect(customers[0]?.name).toBe("Customer One")
+    expect(customers[1]?.name).toBe("Customer Two")
   })
 
   test("should get a customer by id", async () => {
@@ -149,6 +149,6 @@ describe("CustomerService", () => {
       })
     )
 
-    expect(result).toBeNull()
+    expect(result).toBeUndefined()
   })
 })

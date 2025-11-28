@@ -306,11 +306,11 @@ function CustomerForm(props: { customerId: number | null; onSave: () => void; on
         </box>
 
         <box flexDirection="row" gap={2}>
-          <text style={{ fg: "#AAAAAA", width: 15 }}>VAT Number *</text>
+          <text style={{ fg: "#AAAAAA", width: 15 }}>VAT Number</text>
           <input
             focused={focusedField() === "vatNumber" && !saving()}
-            value={formData().vatNumber}
-            onInput={(value) => setFormData(prev => ({ ...prev, vatNumber: value }))}
+            value={formData().vatNumber ?? ""}
+            onInput={(value) => setFormData(prev => ({ ...prev, vatNumber: value || null }))}
             style={{ flexGrow: 1 }}
           />
         </box>

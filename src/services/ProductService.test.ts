@@ -53,8 +53,8 @@ describe("ProductService", () => {
     )
 
     expect(products).toHaveLength(2)
-    expect(products[0].name).toBe("Consulting")
-    expect(products[1].name).toBe("Design")
+    expect(products[0]?.name).toBe("Consulting")
+    expect(products[1]?.name).toBe("Design")
   })
 
   test("should get a product by id", async () => {
@@ -119,6 +119,6 @@ describe("ProductService", () => {
       })
     )
 
-    expect(result).toBeNull()
+    expect(result).toBeUndefined()
   })
 })

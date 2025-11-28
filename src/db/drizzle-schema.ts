@@ -55,7 +55,7 @@ export const invoices = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
     dueDate: text("due_date").notNull(),
-    vatRate: real("vat_rate").notNull(),
+    vatRate: real("vat_rate"),
     notes: text("notes"),
     subtotal: real("subtotal").notNull(),
     vatAmount: real("vat_amount").notNull(),

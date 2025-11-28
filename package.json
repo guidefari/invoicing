@@ -12,6 +12,7 @@
   "devDependencies": {
     "@effect/language-service": "^0.57.0",
     "@types/bun": "latest",
+    "better-sqlite3": "^12.4.6",
     "drizzle-kit": "^0.31.7",
     "effect-solutions": "^0.4.13"
   },
@@ -27,6 +28,7 @@
     "@opentui/solid": "^0.1.50",
     "drizzle-orm": "^0.44.7",
     "effect": "^3.19.7",
+    "puppeteer": "^24.31.0",
     "solid-js": "^1.9.10"
   }
 }

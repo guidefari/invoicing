@@ -14,7 +14,7 @@ export interface BusinessInfo {
 export interface Customer {
   id: number
   name: string
-  vatNumber: string
+  vatNumber: string | null
   streetAddress: string
   city: string
   postalCode: string
@@ -38,7 +38,7 @@ export interface Invoice {
   customerId: number
   createdAt: string
   dueDate: string
-  vatRate: number
+  vatRate: number | null
   notes: string | null
   subtotal: number
   vatAmount: number
@@ -66,7 +66,7 @@ export interface BankDetails {
 
 export interface CreateCustomerInput {
   name: string
-  vatNumber: string
+  vatNumber: string | null
   streetAddress: string
   city: string
   postalCode: string
@@ -84,7 +84,7 @@ export interface CreateProductInput {
 export interface CreateInvoiceInput {
   customerId: number
   dueDate: string
-  vatRate: number
+  vatRate: number | null
   notes: string | null
   lineItems: CreateLineItemInput[]
 }

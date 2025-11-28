@@ -10,7 +10,7 @@ const TestLayer = Layer.mergeAll(
   CustomerServiceLive
 ).pipe(Layer.provide(TestDatabaseLive))
 
-const runTest = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+const runTest = <A, E>(effect: Effect.Effect<A, E, CustomerService | InvoiceService>) =>
   Effect.runPromise(Effect.provide(effect, TestLayer))
 
 describe("InvoiceService", () => {
@@ -49,10 +49,9 @@ describe("InvoiceService", () => {
 
         const customer = yield* customerService.create(customerInput)
 
-        const today = new Date().toISOString().split("T")[0]
         const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
           .toISOString()
-          .split("T")[0]
+          .split("T")[0] ?? ""
 
         const invoiceInput: CreateInvoiceInput = {
           customerId: customer.id,
@@ -247,9 +246,9 @@ describe("InvoiceService", () => {
 
     expect(result).toBeDefined()
     expect(result?.lineItems).toHaveLength(2)
-    expect(result?.lineItems[0].description).toBe("Line Item 1")
-    expect(result?.lineItems[0].lineTotal).toBe(1000)
-    expect(result?.lineItems[1].description).toBe("Line Item 2")
-    expect(result?.lineItems[1].lineTotal).toBe(1000)
+    expect(result?.lineItems[0]?.description).toBe("Line Item 1")
+    expect(result?.lineItems[0]?.lineTotal).toBe(1000)
+    expect(result?.lineItems[1]?.description).toBe("Line Item 2")
+    expect(result?.lineItems[1]?.lineTotal).toBe(1000)
   })
 })
