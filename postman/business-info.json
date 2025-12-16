@@ -1,0 +1,49 @@
+{
+  "info": {
+    "name": "Invoice System - Business Info",
+    "description": "Manage business information for invoice generation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get Business Info",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/business-info",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "business-info"]
+        }
+      }
+    },
+    {
+      "name": "Create/Update Business Info",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"companyName\": \"Your Company Name\",\n  \"streetAddress\": \"123 Business Street\",\n  \"city\": \"Johannesburg\",\n  \"postalCode\": \"2000\",\n  \"country\": \"South Africa\",\n  \"vatNumber\": \"VAT4012345678\",\n  \"email\": \"billing@yourcompany.com\",\n  \"phone\": \"+27 11 123 4567\",\n  \"logoPath\": null,\n  \"accountHolderName\": \"Your Company Name\",\n  \"bankName\": \"Standard Bank\",\n  \"accountNumber\": \"123456789\",\n  \"branchCode\": \"051001\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/business-info",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "business-info"]
+        }
+      }
+    }
+  ]
+}
