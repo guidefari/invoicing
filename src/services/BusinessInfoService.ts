@@ -53,6 +53,7 @@ export const BusinessInfoServiceLive = Layer.effect(
                 ...(input.bankName ? { bankName: input.bankName } : {}),
                 ...(input.accountNumber ? { accountNumber: input.accountNumber } : {}),
                 ...(input.branchCode ? { branchCode: input.branchCode } : {}),
+                ...(input.defaultVatRate !== undefined ? { defaultVatRate: input.defaultVatRate } : {}),
               })
               .where(eq(businessInfo.id, 1))
               .run(),
@@ -101,6 +102,7 @@ export const BusinessInfoServiceLive = Layer.effect(
                 bankName: input.bankName,
                 accountNumber: input.accountNumber,
                 branchCode: input.branchCode,
+                defaultVatRate: input.defaultVatRate ?? null,
               })
               .run(),
           catch: (error) => new DatabaseError("Failed to create business info", error),

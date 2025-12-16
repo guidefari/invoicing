@@ -145,9 +145,18 @@ export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
       <!-- Totals -->
       <div class="totals">
         <div class="total-line">
-          <span class="total-label">Total:</span>
-          <span class="total-amount">${formatCurrency(invoice.total)}</span>
+          <span class="total-label">Subtotal:</span>
+          <span class="total-amount">${formatCurrency(invoice.subtotal)}</span>
         </div>
+        ${
+          invoice.vatAmount > 0
+            ? `
+        <div class="total-line">
+          <span class="total-label">VAT (${invoice.vatRate}%):</span>
+          <span class="total-amount">${formatCurrency(invoice.vatAmount)}</span>
+        </div>`
+            : ""
+        }
         <div class="total-line final">
           <span class="total-label">Amount Due (ZAR):</span>
           <span class="total-amount">${formatCurrency(invoice.total)}</span>

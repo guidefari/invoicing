@@ -2,6 +2,7 @@ import { Context, Effect, Layer } from "effect"
 import { eq, desc, sql, like } from "drizzle-orm"
 import { Database, DatabaseError } from "./Database.ts"
 import { ProductService } from "./ProductService.ts"
+import { BusinessInfoService } from "./BusinessInfoService.ts"
 import { invoices, invoiceLineItems } from "../db/drizzle-schema.ts"
 import type { Invoice, InvoiceLineItem, CreateInvoiceInput } from "../types/index.ts"
 
@@ -24,6 +25,7 @@ export const InvoiceServiceLive = Layer.effect(
   Effect.gen(function* () {
     const database = yield* Database
     const productService = yield* ProductService
+    const businessInfoService = yield* BusinessInfoService
 
     const getNextInvoiceNumber = () =>
       Effect.gen(function* () {
@@ -122,7 +124,18 @@ export const InvoiceServiceLive = Layer.effect(
             (sum, item) => sum + item.quantity * item.unitPrice,
             0
           )
-          const vatAmount = input.vatRate ? subtotal * (input.vatRate / 100) : 0
+
+          let effectiveVatRate = 0
+          if (input.vatRate !== null && input.vatRate !== undefined) {
+             effectiveVatRate = input.vatRate
+          } else {
+             const businessInfo = yield* businessInfoService.get()
+             if (businessInfo?.defaultVatRate) {
+                effectiveVatRate = businessInfo.defaultVatRate
+             }
+          }
+
+          const vatAmount = subtotal * (effectiveVatRate / 100)
           const total = subtotal + vatAmount
 
           yield* Effect.try({
@@ -133,7 +146,7 @@ export const InvoiceServiceLive = Layer.effect(
                   invoiceNumber,
                   customerId: input.customerId,
                   dueDate: input.dueDate,
-                  vatRate: input.vatRate ?? 0,
+                  vatRate: effectiveVatRate,
                   notes: input.notes,
                   subtotal,
                   vatAmount,

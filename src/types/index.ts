@@ -13,6 +13,7 @@ export interface BusinessInfo {
   bankName: string
   accountNumber: string
   branchCode: string
+  defaultVatRate: number | null
 }
 
 export interface CreateBusinessInfoInput {
@@ -29,6 +30,7 @@ export interface CreateBusinessInfoInput {
   bankName: string
   accountNumber: string
   branchCode: string
+  defaultVatRate?: number | null
 }
 
 export interface Customer {

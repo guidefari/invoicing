@@ -209,6 +209,7 @@ describe("BusinessInfoService", () => {
       bankName: "Logo Bank",
       accountNumber: "4444444444",
       branchCode: "444444",
+      defaultVatRate: 15,
     }
 
     const results = await runTest(
@@ -225,6 +226,8 @@ describe("BusinessInfoService", () => {
     )
 
     expect(results.updated.logoPath).toBeNull()
+    expect(results.updated.defaultVatRate).toBe(15)
     expect(results.updatedWithLogo.logoPath).toBe("/new/logo.png")
+    expect(results.updatedWithLogo.defaultVatRate).toBe(15)
   })
 })

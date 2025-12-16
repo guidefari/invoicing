@@ -23,7 +23,7 @@ const createTestDatabase = (): SQLiteDatabase => {
       bank_name TEXT NOT NULL,
       account_number TEXT NOT NULL,
       branch_code TEXT NOT NULL,
-      iban TEXT
+      default_vat_rate REAL
     )
   `)
 

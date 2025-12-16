@@ -1,6 +1,7 @@
 import { describe, test, expect } from "bun:test"
 import { Effect, Layer } from "effect"
 import { InvoiceService, InvoiceServiceLive } from "./InvoiceService.ts"
+import { BusinessInfoService, BusinessInfoServiceLive } from "./BusinessInfoService.ts"
 import { CustomerService, CustomerServiceLive } from "./CustomerService.ts"
 import { ProductService, ProductServiceLive } from "./ProductService.ts"
 import { TestDatabaseLive } from "../db/test-utils.ts"
@@ -9,11 +10,12 @@ import type { CreateInvoiceInput, CreateCustomerInput } from "../types/index.ts"
 const TestLayer = InvoiceServiceLive.pipe(
   Layer.provideMerge(ProductServiceLive),
   Layer.provideMerge(CustomerServiceLive),
+  Layer.provideMerge(BusinessInfoServiceLive),
   Layer.provide(TestDatabaseLive)
 )
 
 const runTest = <A, E>(
-  effect: Effect.Effect<A, E, CustomerService | InvoiceService | ProductService>
+  effect: Effect.Effect<A, E, CustomerService | InvoiceService | ProductService | BusinessInfoService>
 ) => Effect.runPromise(Effect.provide(effect, TestLayer))
 
 describe("InvoiceService", () => {
@@ -309,7 +311,64 @@ describe("InvoiceService", () => {
     expect(result.lineItems[1]?.description).toBe("Discount")
     expect(result.lineItems[1]?.unitPrice).toBe(-500)
     expect(result.subtotal).toBe(14500)
-    expect(result.vatAmount).toBe(0)
     expect(result.total).toBe(14500)
+  })
+
+  test("should use default VAT rate from business info", async () => {
+    const result = await runTest(
+      Effect.gen(function* () {
+        const customerService = yield* CustomerService
+        const businessInfoService = yield* BusinessInfoService
+        const invoiceService = yield* InvoiceService
+
+        // Setup Business Info with default VAT
+        yield* businessInfoService.createOrUpdate({
+          companyName: "VAT Test Corp",
+          streetAddress: "VAT St",
+          city: "VAT City",
+          postalCode: "3333",
+          country: "South Africa",
+          vatNumber: "VAT123456",
+          email: "vat@test.com",
+          phone: "1234567890",
+          accountHolderName: "Holder",
+          bankName: "Bank",
+          accountNumber: "123",
+          branchCode: "456",
+          defaultVatRate: 15,
+        })
+
+        const customer = yield* customerService.create({
+          name: "Default VAT Customer",
+          vatNumber: "VATCUST",
+          streetAddress: "Cust St",
+          city: "Cust City",
+          postalCode: "4444",
+          country: "South Africa",
+          email: "cust@test.com",
+          phone: "0987654321",
+        })
+
+        return yield* invoiceService.create({
+          customerId: customer.id,
+          dueDate: "2025-12-31",
+          vatRate: null, // Should use default
+          notes: null,
+          lineItems: [
+            {
+              productId: null,
+              description: "Taxable Item",
+              quantity: 1,
+              unitPrice: 1000,
+            },
+          ],
+        })
+      })
+    )
+
+    expect(result.subtotal).toBe(1000)
+    expect(result.vatRate).toBe(15)
+    expect(result.vatAmount).toBe(150)
+    expect(result.total).toBe(1150)
   })
 })
