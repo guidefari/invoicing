@@ -2,16 +2,19 @@ import { describe, test, expect } from "bun:test"
 import { Effect, Layer } from "effect"
 import { InvoiceService, InvoiceServiceLive } from "./InvoiceService.ts"
 import { CustomerService, CustomerServiceLive } from "./CustomerService.ts"
+import { ProductService, ProductServiceLive } from "./ProductService.ts"
 import { TestDatabaseLive } from "../db/test-utils.ts"
 import type { CreateInvoiceInput, CreateCustomerInput } from "../types/index.ts"
 
-const TestLayer = Layer.mergeAll(
-  InvoiceServiceLive,
-  CustomerServiceLive
-).pipe(Layer.provide(TestDatabaseLive))
+const TestLayer = InvoiceServiceLive.pipe(
+  Layer.provideMerge(ProductServiceLive),
+  Layer.provideMerge(CustomerServiceLive),
+  Layer.provide(TestDatabaseLive)
+)
 
-const runTest = <A, E>(effect: Effect.Effect<A, E, CustomerService | InvoiceService>) =>
-  Effect.runPromise(Effect.provide(effect, TestLayer))
+const runTest = <A, E>(
+  effect: Effect.Effect<A, E, CustomerService | InvoiceService | ProductService>
+) => Effect.runPromise(Effect.provide(effect, TestLayer))
 
 describe("InvoiceService", () => {
   test("should generate sequential invoice numbers", async () => {
@@ -250,5 +253,63 @@ describe("InvoiceService", () => {
     expect(result?.lineItems[0]?.lineTotal).toBe(1000)
     expect(result?.lineItems[1]?.description).toBe("Line Item 2")
     expect(result?.lineItems[1]?.lineTotal).toBe(1000)
+  })
+
+  test("should auto-fill description and price from product", async () => {
+    const result = await runTest(
+      Effect.gen(function* () {
+        const customerService = yield* CustomerService
+        const productService = yield* ProductService
+        const invoiceService = yield* InvoiceService
+
+        const customer = yield* customerService.create({
+          name: "Product Test Customer",
+          vatNumber: "VATPROD",
+          streetAddress: "Product St",
+          city: "Product City",
+          postalCode: "2222",
+          country: "South Africa",
+          email: "product@test.com",
+          phone: "+27 22 222 2222",
+        })
+
+        const product = yield* productService.create({
+          name: "Web Development",
+          description: "Professional web development services",
+          defaultPrice: 1500,
+        })
+
+        const invoice = yield* invoiceService.create({
+          customerId: customer.id,
+          dueDate: "2025-12-31",
+          vatRate: null,
+          notes: null,
+          lineItems: [
+            {
+              productId: product.id,
+              quantity: 10,
+            },
+            {
+              productId: null,
+              description: "Discount",
+              quantity: 1,
+              unitPrice: -500,
+            },
+          ],
+        })
+
+        return invoice
+      })
+    )
+
+    expect(result.lineItems).toHaveLength(2)
+    expect(result.lineItems[0]?.description).toBe("Web Development")
+    expect(result.lineItems[0]?.unitPrice).toBe(1500)
+    expect(result.lineItems[0]?.lineTotal).toBe(15000)
+    expect(result.lineItems[1]?.description).toBe("Discount")
+    expect(result.lineItems[1]?.unitPrice).toBe(-500)
+    expect(result.subtotal).toBe(14500)
+    expect(result.vatAmount).toBe(0)
+    expect(result.total).toBe(14500)
   })
 })

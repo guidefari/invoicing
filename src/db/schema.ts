@@ -16,8 +16,7 @@ export const createTables = (db: Database): void => {
       account_holder_name TEXT NOT NULL,
       bank_name TEXT NOT NULL,
       account_number TEXT NOT NULL,
-      branch_code TEXT NOT NULL,
-      iban TEXT
+      branch_code TEXT NOT NULL
     )
   `)
 

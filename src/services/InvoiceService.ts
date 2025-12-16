@@ -1,6 +1,7 @@
 import { Context, Effect, Layer } from "effect"
 import { eq, desc, sql, like } from "drizzle-orm"
 import { Database, DatabaseError } from "./Database.ts"
+import { ProductService } from "./ProductService.ts"
 import { invoices, invoiceLineItems } from "../db/drizzle-schema.ts"
 import type { Invoice, InvoiceLineItem, CreateInvoiceInput } from "../types/index.ts"
 
@@ -22,6 +23,7 @@ export const InvoiceServiceLive = Layer.effect(
   InvoiceService,
   Effect.gen(function* () {
     const database = yield* Database
+    const productService = yield* ProductService
 
     const getNextInvoiceNumber = () =>
       Effect.gen(function* () {
@@ -80,7 +82,46 @@ export const InvoiceServiceLive = Layer.effect(
         Effect.gen(function* () {
           const invoiceNumber = yield* getNextInvoiceNumber()
 
-          const subtotal = input.lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+          const enrichedLineItems = yield* Effect.all(
+            input.lineItems.map((item) =>
+              Effect.gen(function* () {
+                let description = item.description
+                let unitPrice = item.unitPrice
+
+                if (item.productId !== null && (description === undefined || unitPrice === undefined)) {
+                  const product = yield* productService.get(item.productId)
+                  if (!product) {
+                    return yield* Effect.fail(
+                      new DatabaseError(`Product with ID ${item.productId} not found`)
+                    )
+                  }
+                  description = description ?? product.name
+                  unitPrice = unitPrice ?? product.defaultPrice
+                }
+
+                if (description === undefined || unitPrice === undefined) {
+                  return yield* Effect.fail(
+                    new DatabaseError(
+                      "Line item must have either productId or both description and unitPrice"
+                    )
+                  )
+                }
+
+                return {
+                  productId: item.productId,
+                  description,
+                  quantity: item.quantity,
+                  unitPrice,
+                  additionalNotes: item.additionalNotes ?? null,
+                }
+              })
+            )
+          )
+
+          const subtotal = enrichedLineItems.reduce(
+            (sum, item) => sum + item.quantity * item.unitPrice,
+            0
+          )
           const vatAmount = input.vatRate ? subtotal * (input.vatRate / 100) : 0
           const total = subtotal + vatAmount
 
@@ -92,7 +133,7 @@ export const InvoiceServiceLive = Layer.effect(
                   invoiceNumber,
                   customerId: input.customerId,
                   dueDate: input.dueDate,
-                  vatRate: input.vatRate,
+                  vatRate: input.vatRate ?? 0,
                   notes: input.notes,
                   subtotal,
                   vatAmount,
@@ -116,7 +157,7 @@ export const InvoiceServiceLive = Layer.effect(
             return yield* Effect.fail(new DatabaseError("Failed to retrieve created invoice"))
           }
 
-          for (const item of input.lineItems) {
+          for (const item of enrichedLineItems) {
             const lineTotal = item.quantity * item.unitPrice
             yield* Effect.try({
               try: () =>

@@ -9,6 +9,26 @@ export interface BusinessInfo {
   email: string
   phone: string
   logoPath: string | null
+  accountHolderName: string
+  bankName: string
+  accountNumber: string
+  branchCode: string
+}
+
+export interface CreateBusinessInfoInput {
+  companyName: string
+  streetAddress: string
+  city: string
+  postalCode: string
+  country: string
+  vatNumber: string
+  email: string
+  phone: string
+  logoPath?: string | null
+  accountHolderName: string
+  bankName: string
+  accountNumber: string
+  branchCode: string
 }
 
 export interface Customer {
@@ -91,8 +111,8 @@ export interface CreateInvoiceInput {
 
 export interface CreateLineItemInput {
   productId: number | null
-  description: string
+  description?: string
   quantity: number
-  unitPrice: number
-  additionalNotes: string | null
+  unitPrice?: number
+  additionalNotes?: string | null
 }

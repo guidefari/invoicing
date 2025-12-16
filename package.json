@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "start": "bun src/index.tsx",
+    "dev": "bun --hot src/server.ts",
     "server": "bun src/server.ts",
     "prepare": "effect-language-service patch",
     "typecheck": "tsc --noEmit"

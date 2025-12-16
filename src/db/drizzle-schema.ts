@@ -15,7 +15,6 @@ export const businessInfo = sqliteTable("business_info", {
   bankName: text("bank_name").notNull(),
   accountNumber: text("account_number").notNull(),
   branchCode: text("branch_code").notNull(),
-  iban: text("iban"),
 })
 
 export const customers = sqliteTable("customers", {

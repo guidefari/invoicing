@@ -2,11 +2,14 @@ import { Effect } from "effect"
 import { CustomerService } from "./services/CustomerService.ts"
 import { ProductService } from "./services/ProductService.ts"
 import { InvoiceService } from "./services/InvoiceService.ts"
+import { InvoicePDFService } from "./services/InvoicePDFService.ts"
+import { BusinessInfoService } from "./services/BusinessInfoService.ts"
 import { AppLayer } from "./runtime.ts"
 import type {
   CreateCustomerInput,
   CreateProductInput,
   CreateInvoiceInput,
+  CreateBusinessInfoInput,
 } from "./types/index.ts"
 
 const PORT = process.env.PORT || 3000
@@ -28,6 +31,31 @@ async function handleRequest(req: Request): Promise<Response> {
   }
 
   try {
+    if (path === "/api/business-info" && method === "GET") {
+      const program = Effect.gen(function* () {
+        const service = yield* BusinessInfoService
+        return yield* service.get()
+      })
+      const businessInfo = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
+      if (!businessInfo) {
+        return new Response(JSON.stringify({ error: "Business info not configured" }), {
+          status: 404,
+          headers,
+        })
+      }
+      return new Response(JSON.stringify(businessInfo), { headers })
+    }
+
+    if (path === "/api/business-info" && (method === "POST" || method === "PUT")) {
+      const body = (await req.json()) as CreateBusinessInfoInput
+      const program = Effect.gen(function* () {
+        const service = yield* BusinessInfoService
+        return yield* service.createOrUpdate(body)
+      })
+      const businessInfo = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
+      return new Response(JSON.stringify(businessInfo), { status: 200, headers })
+    }
+
     if (path === "/api/customers" && method === "GET") {
       const program = Effect.gen(function* () {
         const service = yield* CustomerService
@@ -173,6 +201,22 @@ async function handleRequest(req: Request): Promise<Response> {
       })
       const invoice = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
       return new Response(JSON.stringify(invoice), { status: 201, headers })
+    }
+
+    if (path.match(/^\/api\/invoices\/\d+\/pdf$/) && method === "GET") {
+      const id = Number.parseInt(path.split("/")[3]!)
+      const program = Effect.gen(function* () {
+        const service = yield* InvoicePDFService
+        return yield* service.generatePDF(id)
+      })
+      const pdfBuffer = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
+      return new Response(pdfBuffer, {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="invoice-${id}.pdf"`,
+          "Access-Control-Allow-Origin": "*",
+        },
+      })
     }
 
     return new Response(JSON.stringify({ error: "Not found" }), {

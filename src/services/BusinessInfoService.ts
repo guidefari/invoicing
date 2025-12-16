@@ -2,12 +2,13 @@ import { Context, Effect, Layer } from "effect"
 import { eq } from "drizzle-orm"
 import { Database, DatabaseError } from "./Database.ts"
 import { businessInfo } from "../db/drizzle-schema.ts"
-import type { BusinessInfo } from "../types/index.ts"
+import type { BusinessInfo, CreateBusinessInfoInput } from "../types/index.ts"
 
 export class BusinessInfoService extends Context.Tag("BusinessInfoService")<
   BusinessInfoService,
   {
     readonly get: () => Effect.Effect<BusinessInfo | undefined, DatabaseError>
+    readonly createOrUpdate: (input: CreateBusinessInfoInput) => Effect.Effect<BusinessInfo, DatabaseError>
   }
 >() {}
 
@@ -22,6 +23,75 @@ export const BusinessInfoServiceLive = Layer.effect(
           try: () => database.db.select().from(businessInfo).where(eq(businessInfo.id, 1)).get(),
           catch: (error) => new DatabaseError("Failed to get business info", error),
         }).pipe(Effect.map((result) => result as BusinessInfo | undefined)),
+
+      createOrUpdate: (input: CreateBusinessInfoInput) =>
+        Effect.gen(function* () {
+          const existing = yield* Effect.try({
+            try: () => database.db.select().from(businessInfo).where(eq(businessInfo.id, 1)).get(),
+            catch: (error) => new DatabaseError("Failed to check existing business info", error),
+          })
+
+          if (existing) {
+            yield* Effect.try({
+              try: () =>
+                database.db
+                  .update(businessInfo)
+                  .set({
+                    companyName: input.companyName,
+                    streetAddress: input.streetAddress,
+                    city: input.city,
+                    postalCode: input.postalCode,
+                    country: input.country,
+                    vatNumber: input.vatNumber,
+                    email: input.email,
+                    phone: input.phone,
+                    logoPath: input.logoPath ?? null,
+                    accountHolderName: input.accountHolderName,
+                    bankName: input.bankName,
+                    accountNumber: input.accountNumber,
+                    branchCode: input.branchCode,
+                  })
+                  .where(eq(businessInfo.id, 1))
+                  .run(),
+              catch: (error) => new DatabaseError("Failed to update business info", error),
+            })
+          } else {
+            yield* Effect.try({
+              try: () =>
+                database.db
+                  .insert(businessInfo)
+                  .values({
+                    id: 1,
+                    companyName: input.companyName,
+                    streetAddress: input.streetAddress,
+                    city: input.city,
+                    postalCode: input.postalCode,
+                    country: input.country,
+                    vatNumber: input.vatNumber,
+                    email: input.email,
+                    phone: input.phone,
+                    logoPath: input.logoPath ?? null,
+                    accountHolderName: input.accountHolderName,
+                    bankName: input.bankName,
+                    accountNumber: input.accountNumber,
+                    branchCode: input.branchCode,
+                  })
+                  .run(),
+              catch: (error) => new DatabaseError("Failed to create business info", error),
+            })
+          }
+
+          const result = yield* Effect.try({
+            try: () => database.db.select().from(businessInfo).where(eq(businessInfo.id, 1)).get(),
+            catch: (error) => new DatabaseError("Failed to retrieve business info", error),
+          })
+
+          if (!result) {
+            return yield* Effect.fail(new DatabaseError("Failed to retrieve business info"))
+          }
+
+          return result as BusinessInfo
+        }),
     }
   })
 )
