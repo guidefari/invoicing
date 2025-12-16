@@ -1,4 +1,4 @@
-import { Layer } from "effect"
+import { Layer, ManagedRuntime } from "effect"
 import { DatabaseLive } from "./services/Database.ts"
 import { CustomerServiceLive } from "./services/CustomerService.ts"
 import { ProductServiceLive } from "./services/ProductService.ts"
@@ -18,3 +18,5 @@ export const AppLayer = InvoicePDFServiceLive.pipe(
   Layer.provideMerge(PDFServiceLive),
   Layer.provideMerge(DatabaseLive)
 )
+
+export const AppRuntime = ManagedRuntime.make(AppLayer)

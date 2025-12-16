@@ -1,10 +1,12 @@
+import { Hono } from "hono"
+import { cors } from "hono/cors"
 import { Effect } from "effect"
 import { CustomerService } from "./services/CustomerService.ts"
 import { ProductService } from "./services/ProductService.ts"
 import { InvoiceService } from "./services/InvoiceService.ts"
 import { InvoicePDFService } from "./services/InvoicePDFService.ts"
 import { BusinessInfoService } from "./services/BusinessInfoService.ts"
-import { AppLayer } from "./runtime.ts"
+import { AppRuntime } from "./runtime.ts"
 import type {
   CreateCustomerInput,
   CreateProductInput,
@@ -14,274 +16,300 @@ import type {
 
 const PORT = process.env.PORT || 3333
 
-const headers = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-}
+const app = new Hono()
 
+// Middleware
+app.use("/*", cors())
 
-
-function jsonResponse(data: any, status = 200): Response {
-  return new Response(JSON.stringify(data), { status, headers })
-}
-
-function notFoundResponse(message = "Not found"): Response {
-  return jsonResponse({ error: message }, 404)
-}
-
-function errorResponse(error: unknown): Response {
-  console.error("Request error:", error)
-  return jsonResponse(
-    { error: error instanceof Error ? error.message : "Internal server error" },
-    500
-  )
-}
-
-const routes = {
-  "/api/business-info": {
-    GET: async (_req: Request) => {
-      try {
-        const program = Effect.gen(function* () {
-          const service = yield* BusinessInfoService
-          return yield* service.get()
-        })
-        const businessInfo = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
-        if (!businessInfo) {
-          return notFoundResponse("Business info not configured")
-        }
-        return jsonResponse(businessInfo)
-      } catch (error) {
-        return errorResponse(error)
+const routes = app
+  // Business Info
+  .get("/api/business-info", async (c) => {
+    try {
+      const program = Effect.gen(function* () {
+        const service = yield* BusinessInfoService
+        return yield* service.get()
+      })
+      const businessInfo = await AppRuntime.runPromise(program)
+      if (!businessInfo) {
+        return c.json({ error: "Business info not configured" }, 404)
       }
-    },
-    POST: async (req: Request) => {
-      try {
-        const body = (await req.json()) as CreateBusinessInfoInput
-        const program = Effect.gen(function* () {
-          const service = yield* BusinessInfoService
-          return yield* service.createOrUpdate(body)
-        })
-        const businessInfo = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
-        return jsonResponse(businessInfo)
-      } catch (error) {
-        return errorResponse(error)
+      return c.json(businessInfo)
+    } catch (error) {
+      console.error("Request error:", error)
+      return c.json(
+        { error: error instanceof Error ? error.message : "Internal server error" },
+        500
+      )
+    }
+  })
+  .post("/api/business-info", async (c) => {
+    try {
+      const body = await c.req.json<CreateBusinessInfoInput>()
+      const program = Effect.gen(function* () {
+        const service = yield* BusinessInfoService
+        return yield* service.createOrUpdate(body)
+      })
+      const businessInfo = await AppRuntime.runPromise(program)
+      return c.json(businessInfo)
+    } catch (error) {
+      console.error("Request error:", error)
+      return c.json(
+        { error: error instanceof Error ? error.message : "Internal server error" },
+        500
+      )
+    }
+  })
+  .patch("/api/business-info", async (c) => {
+    try {
+      const body = await c.req.json<Partial<CreateBusinessInfoInput>>()
+      const program = Effect.gen(function* () {
+        const service = yield* BusinessInfoService
+        return yield* service.update(body)
+      })
+      const businessInfo = await AppRuntime.runPromise(program)
+      return c.json(businessInfo)
+    } catch (error) {
+      console.error("Request error:", error)
+      return c.json(
+        { error: error instanceof Error ? error.message : "Internal server error" },
+        500
+      )
+    }
+  })
+  
+  // Customers (Migrated from Business Info PUT/DELETE)
+  .put("/api/customers/:id", async (c) => {
+    try {
+      const id = Number.parseInt(c.req.param("id"))
+      if (isNaN(id)) {
+         return c.json({ error: "Invalid ID parameter" }, 400)
       }
-    },
-    PUT: async (req: Request) => {
-      console.log('req:', JSON.stringify(req.params))
-      try {
-        const idParam = req.params?.id
-        if (!idParam) {
-          return notFoundResponse("ID parameter missing")
-        }
-        const id = Number.parseInt(idParam)
-        const body = (await req.json()) as CreateCustomerInput
-        const program = Effect.gen(function* () {
-          const service = yield* CustomerService
-          return yield* service.update(id, body)
-        })
-        const customer = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
-        return jsonResponse(customer)
-      } catch (error) {
-        return errorResponse(error)
+      const body = await c.req.json<CreateCustomerInput>()
+      const program = Effect.gen(function* () {
+        const service = yield* CustomerService
+        return yield* service.update(id, body)
+      })
+      const customer = await AppRuntime.runPromise(program)
+      return c.json(customer)
+    } catch (error) {
+      console.error("Request error:", error)
+      return c.json(
+        { error: error instanceof Error ? error.message : "Internal server error" },
+        500
+      )
+    }
+  })
+  .delete("/api/customers/:id", async (c) => {
+    try {
+      const id = Number.parseInt(c.req.param("id"))
+      if (isNaN(id)) {
+        return c.json({ error: "Invalid ID parameter" }, 400)
       }
-    },
-    DELETE: async (req: Request) => {
-      try {
-        const idParam = req.params?.id
-        if (!idParam) {
-          return notFoundResponse("ID parameter missing")
-        }
-        const id = Number.parseInt(idParam)
-        const program = Effect.gen(function* () {
-          const service = yield* CustomerService
-          return yield* service.delete(id)
-        })
-        await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
-        return new Response(null, { status: 204, headers })
-      } catch (error) {
-        return errorResponse(error)
-      }
-    },
-    OPTIONS: (_req: Request) => new Response(null, { status: 204, headers }),
-  },
-  "/api/products": {
-    GET: async (_req: Request) => {
-      try {
-        const program = Effect.gen(function* () {
-          const service = yield* ProductService
-          return yield* service.list()
-        })
-        const products = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
-        return jsonResponse(products)
-      } catch (error) {
-        return errorResponse(error)
-      }
-    },
-    POST: async (req: Request) => {
-      try {
-        const body = (await req.json()) as CreateProductInput
+      const program = Effect.gen(function* () {
+        const service = yield* CustomerService
+        return yield* service.delete(id)
+      })
+      await AppRuntime.runPromise(program)
+      return c.body(null, 204)
+    } catch (error) {
+       console.error("Request error:", error)
+       return c.json(
+        { error: error instanceof Error ? error.message : "Internal server error" },
+        500
+      )
+    }
+  })
+
+  // Products
+  .get("/api/products", async (c) => {
+    try {
+      const program = Effect.gen(function* () {
+        const service = yield* ProductService
+        return yield* service.list()
+      })
+      const products = await AppRuntime.runPromise(program)
+      return c.json(products)
+    } catch (error) {
+      console.error("Request error:", error)
+      return c.json(
+        { error: error instanceof Error ? error.message : "Internal server error" },
+        500
+      )
+    }
+  })
+  .post("/api/products", async (c) => {
+     try {
+        const body = await c.req.json<CreateProductInput>()
         const program = Effect.gen(function* () {
           const service = yield* ProductService
           return yield* service.create(body)
         })
-        const product = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
-        return jsonResponse(product, 201)
+        const product = await AppRuntime.runPromise(program)
+        return c.json(product, 201)
       } catch (error) {
-        return errorResponse(error)
+        console.error("Request error:", error)
+        return c.json(
+          { error: error instanceof Error ? error.message : "Internal server error" },
+          500
+        )
       }
-    },
-    OPTIONS: (_req: Request) => new Response(null, { status: 204, headers }),
-  },
-  "/api/products/:id": {
-    GET: async (req: Request) => {
-      try {
-        const idParam = req.params?.id
-        if (!idParam) {
-          return notFoundResponse("ID parameter missing")
-        }
-        const id = Number.parseInt(idParam)
-        const program = Effect.gen(function* () {
-          const service = yield* ProductService
-          return yield* service.get(id)
-        })
-        const product = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
-        if (!product) {
-          return notFoundResponse("Product not found")
-        }
-        return jsonResponse(product)
-      } catch (error) {
-        return errorResponse(error)
+  })
+  .get("/api/products/:id", async (c) => {
+    try {
+      const id = Number.parseInt(c.req.param("id"))
+       if (isNaN(id)) {
+         return c.json({ error: "Invalid ID parameter" }, 400)
       }
-    },
-    PUT: async (req: Request) => {
-      try {
-        const idParam = req.params?.id
-        if (!idParam) {
-          return notFoundResponse("ID parameter missing")
-        }
-        const id = Number.parseInt(idParam)
-        const body = (await req.json()) as CreateProductInput
+      const program = Effect.gen(function* () {
+        const service = yield* ProductService
+        return yield* service.get(id)
+      })
+      const product = await AppRuntime.runPromise(program)
+      if (!product) {
+        return c.json({ error: "Product not found" }, 404)
+      }
+      return c.json(product)
+    } catch (error) {
+      console.error("Request error:", error)
+      return c.json(
+        { error: error instanceof Error ? error.message : "Internal server error" },
+        500
+      )
+    }
+  })
+  .put("/api/products/:id", async (c) => {
+    try {
+       const id = Number.parseInt(c.req.param("id"))
+       if (isNaN(id)) {
+         return c.json({ error: "Invalid ID parameter" }, 400)
+      }
+        const body = await c.req.json<CreateProductInput>()
         const program = Effect.gen(function* () {
           const service = yield* ProductService
           return yield* service.update(id, body)
         })
-        const product = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
-        return jsonResponse(product)
+        const product = await AppRuntime.runPromise(program)
+        return c.json(product)
       } catch (error) {
-        return errorResponse(error)
+        console.error("Request error:", error)
+        return c.json(
+          { error: error instanceof Error ? error.message : "Internal server error" },
+          500
+        )
       }
-    },
-    DELETE: async (req: Request) => {
-      try {
-        const idParam = req.params?.id
-        if (!idParam) {
-          return notFoundResponse("ID parameter missing")
-        }
-        const id = Number.parseInt(idParam)
+  })
+  .delete("/api/products/:id", async (c) => {
+     try {
+       const id = Number.parseInt(c.req.param("id"))
+       if (isNaN(id)) {
+         return c.json({ error: "Invalid ID parameter" }, 400)
+      }
         const program = Effect.gen(function* () {
           const service = yield* ProductService
           return yield* service.delete(id)
         })
-        await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
-        return new Response(null, { status: 204, headers })
+        await AppRuntime.runPromise(program)
+        return c.body(null, 204)
       } catch (error) {
-        return errorResponse(error)
+        console.error("Request error:", error)
+        return c.json(
+          { error: error instanceof Error ? error.message : "Internal server error" },
+          500
+        )
       }
-    },
-    OPTIONS: (_req: Request) => new Response(null, { status: 204, headers }),
-  },
-  "/api/invoices": {
-    GET: async (_req: Request) => {
-      try {
+  })
+
+  // Invoices
+  .get("/api/invoices", async (c) => {
+    try {
         const program = Effect.gen(function* () {
           const service = yield* InvoiceService
           return yield* service.list()
         })
-        const invoices = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
-        return jsonResponse(invoices)
+        const invoices = await AppRuntime.runPromise(program)
+        return c.json(invoices)
       } catch (error) {
-        return errorResponse(error)
+        console.error("Request error:", error)
+        return c.json(
+          { error: error instanceof Error ? error.message : "Internal server error" },
+          500
+        )
       }
-    },
-    POST: async (req: Request) => {
+  })
+  .post("/api/invoices", async (c) => {
       try {
-        const body = (await req.json()) as CreateInvoiceInput
+        const body = await c.req.json<CreateInvoiceInput>()
         const program = Effect.gen(function* () {
           const service = yield* InvoiceService
           return yield* service.create(body)
         })
-        const invoice = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
-        return jsonResponse(invoice, 201)
+        const invoice = await AppRuntime.runPromise(program)
+        return c.json(invoice, 201)
       } catch (error) {
-        return errorResponse(error)
+        console.error("Request error:", error)
+        return c.json(
+          { error: error instanceof Error ? error.message : "Internal server error" },
+          500
+        )
       }
-    },
-    OPTIONS: (_req: Request) => new Response(null, { status: 204, headers }),
-  },
-  "/api/invoices/:id": {
-    GET: async (req: Request) => {
-      try {
-        const idParam = req.params?.id
-        if (!idParam) {
-          return notFoundResponse("ID parameter missing")
-        }
-        const id = Number.parseInt(idParam)
+  })
+  .get("/api/invoices/:id", async (c) => {
+    try {
+       const id = Number.parseInt(c.req.param("id"))
+       if (isNaN(id)) {
+         return c.json({ error: "Invalid ID parameter" }, 400)
+      }
         const program = Effect.gen(function* () {
           const service = yield* InvoiceService
           return yield* service.get(id)
         })
-        const invoice = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
+        const invoice = await AppRuntime.runPromise(program)
         if (!invoice) {
-          return notFoundResponse("Invoice not found")
+          return c.json({ error: "Invoice not found" }, 404)
         }
-        return jsonResponse(invoice)
+        return c.json(invoice)
       } catch (error) {
-        return errorResponse(error)
+        console.error("Request error:", error)
+        return c.json(
+          { error: error instanceof Error ? error.message : "Internal server error" },
+          500
+        )
       }
-    },
-    OPTIONS: (_req: Request) => new Response(null, { status: 204, headers }),
-  },
-  "/api/invoices/:id/pdf": {
-    GET: async (req: Request) => {
-      try {
-        const idParam = req.params?.id
-        if (!idParam) {
-          return notFoundResponse("ID parameter missing")
-        }
-        const id = Number.parseInt(idParam)
+  })
+  .get("/api/invoices/:id/pdf", async (c) => {
+    try {
+       const id = Number.parseInt(c.req.param("id"))
+       if (isNaN(id)) {
+         return c.json({ error: "Invalid ID parameter" }, 400)
+      }
         const program = Effect.gen(function* () {
           const service = yield* InvoicePDFService
           return yield* service.generatePDF(id)
         })
-        const pdfBuffer = await Effect.runPromise(program.pipe(Effect.provide(AppLayer)))
+        const pdfBuffer = await AppRuntime.runPromise(program)
+        
         return new Response(pdfBuffer, {
           headers: {
             "Content-Type": "application/pdf",
             "Content-Disposition": `attachment; filename="invoice-${id}.pdf"`,
-            "Access-Control-Allow-Origin": "*",
+            // CORS headers are handled by middleware, but if we need specific ones we can add them.
+            // Hono middleware handles Access-Control-Allow-Origin: *
           },
         })
       } catch (error) {
-        return errorResponse(error)
+        console.error("Request error:", error)
+        return c.json(
+          { error: error instanceof Error ? error.message : "Internal server error" },
+          500
+        )
       }
-    },
-    OPTIONS: (_req: Request) => new Response(null, { status: 204, headers }),
-  },
-}
+  })
 
-// Extend Request interface to include params (added by Bun's routing)
-declare global {
-  interface Request {
-    params: Record<string, string | undefined>
-  }
-}
-
-Bun.serve({
-  port: PORT,
-  routes,
-})
+export type AppType = typeof routes
 
 console.log(`API server running on http://localhost:${PORT}`)
+
+export default {
+  port: PORT,
+  fetch: app.fetch,
+}
