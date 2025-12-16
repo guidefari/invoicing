@@ -8,7 +8,11 @@
     "dev": "bun --hot src/server.ts",
     "server": "bun src/server.ts",
     "prepare": "effect-language-service patch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:push": "drizzle-kit push",
+    "db:gen": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
     "@effect/language-service": "^0.57.0",
@@ -21,7 +25,11 @@
     "typescript": "^5"
   },
   "trustedDependencies": [
-    "@parcel/watcher"
+    "@parcel/watcher",
+    "better-sqlite3",
+    "esbuild",
+    "msgpackr-extract",
+    "puppeteer"
   ],
   "dependencies": {
     "@effect/platform": "^0.93.4",

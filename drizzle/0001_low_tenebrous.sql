@@ -1,0 +1,1 @@
+ALTER TABLE `business_info` ADD `default_vat_rate` real;
