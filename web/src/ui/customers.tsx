@@ -22,30 +22,30 @@ app.get("/", async (c) => {
         <a href="/customers/new" class="btn btn-primary">New Customer</a>
       </div>
 
-      <div class="card">
+      <div class="table-container">
         <table>
           <thead>
             <tr>
               <th>Name</th>
               <th>Email</th>
               <th>Phone</th>
-              <th>Actions</th>
+              <th class="text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {customers.map((customer) => (
               <tr>
-                <td>{customer.name}</td>
+                <td class="font-medium">{customer.name}</td>
                 <td>{customer.email || "-"}</td>
                 <td>{customer.phone || "-"}</td>
-                <td>
-                  <a href={`/customers/${customer.id}`} class="btn btn-link">Edit</a>
+                <td class="text-right">
+                  <a href={`/customers/${customer.id}`} class="btn btn-outline text-sm">Edit</a>
                 </td>
               </tr>
             ))}
             {customers.length === 0 && (
               <tr>
-                <td colspan={4} style="text-align: center; color: #666;">No customers found.</td>
+                <td colspan={4} class="text-secondary" style="text-align: center;">No customers found.</td>
               </tr>
             )}
           </tbody>
@@ -154,13 +154,13 @@ app.get("/:id", async (c) => {
 
   return c.html(
     <Layout title={`Edit Customer: ${customer.name}`}>
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-6">
         <h1>Edit Customer</h1>
-        <div class="flex gap-4">
+        <div class="flex gap-2">
             <form method="post" action={`/customers/${id}/delete`} onsubmit="return confirm('Are you sure?');" style="display:inline;">
                 <button type="submit" class="btn btn-danger">Delete</button>
             </form>
-            <a href="/customers" class="btn btn-link">Back to List</a>
+            <a href="/customers" class="btn btn-outline text-sm">Back to List</a>
         </div>
       </div>
 

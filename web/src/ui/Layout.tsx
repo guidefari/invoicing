@@ -17,16 +17,16 @@ export const Layout: FC<{ title?: string; children: any }> = (props) => {
         <header>
           <div class="container">
             <div class="flex justify-between items-center">
-              <a href="/" style="font-size: 1.25rem; font-weight: bold; text-decoration: none; color: inherit;">
-                Invoicing App
+              <a href="/" class="text-xl font-bold" style="color: inherit;">
+                Invoicing
               </a>
               <nav>
-                <ul>
-                  <li><a href="/">Dashboard</a></li>
-                  <li><a href="/invoices">Invoices</a></li>
-                  <li><a href="/customers">Customers</a></li>
-                  <li><a href="/products">Products</a></li>
-                  <li><a href="/business-info">Business Info</a></li>
+                <ul class="flex gap-4 m-0" style="list-style: none; padding: 0;">
+                  <li><a href="/" class="font-medium">Dashboard</a></li>
+                  <li><a href="/invoices" class="font-medium">Invoices</a></li>
+                  <li><a href="/customers" class="font-medium">Customers</a></li>
+                  <li><a href="/products" class="font-medium">Products</a></li>
+                  <li><a href="/business-info" class="font-medium">Business Info</a></li>
                 </ul>
               </nav>
             </div>
@@ -40,3 +40,4 @@ export const Layout: FC<{ title?: string; children: any }> = (props) => {
     </html>
   `
 }
+

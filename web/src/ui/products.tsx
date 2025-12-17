@@ -22,30 +22,30 @@ app.get("/", async (c) => {
         <a href="/products/new" class="btn btn-primary">New Product</a>
       </div>
 
-      <div class="card">
+      <div class="table-container">
         <table>
           <thead>
             <tr>
               <th>Name</th>
               <th>Description</th>
               <th>Price</th>
-              <th>Actions</th>
+              <th class="text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {products.map((product) => (
               <tr>
-                <td>{product.name}</td>
-                <td>{product.description || "-"}</td>
-                <td>{product.defaultPrice.toFixed(2)}</td>
-                <td>
-                  <a href={`/products/${product.id}`} class="btn btn-link">Edit</a>
+                <td class="font-medium">{product.name}</td>
+                <td class="text-secondary">{product.description || "-"}</td>
+                <td class="font-bold">{product.defaultPrice.toFixed(2)}</td>
+                <td class="text-right">
+                  <a href={`/products/${product.id}`} class="btn btn-outline text-sm">Edit</a>
                 </td>
               </tr>
             ))}
             {products.length === 0 && (
               <tr>
-                <td colspan={4} style="text-align: center; color: #666;">No products found.</td>
+                <td colspan={4} class="text-secondary" style="text-align: center;">No products found.</td>
               </tr>
             )}
           </tbody>
@@ -124,13 +124,13 @@ app.get("/:id", async (c) => {
 
   return c.html(
     <Layout title={`Edit Product: ${product.name}`}>
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-6">
         <h1>Edit Product</h1>
-        <div class="flex gap-4">
+        <div class="flex gap-2">
             <form method="post" action={`/products/${id}/delete`} onsubmit="return confirm('Are you sure?');" style="display:inline;">
                 <button type="submit" class="btn btn-danger">Delete</button>
             </form>
-            <a href="/products" class="btn btn-link">Back to List</a>
+            <a href="/products" class="btn btn-outline text-sm">Back to List</a>
         </div>
       </div>
 

@@ -28,7 +28,10 @@ export default {
   fetch: app.fetch,
 }
 
-app.use("/static/*", serveStatic({ root: "./src/ui" }))
+app.use("/static/*", serveStatic({ 
+  root: "./src/ui",
+  rewriteRequestPath: (path) => path.replace(/^\/static/, "")
+}))
 
 import home from "./ui/home.tsx"
 import businessInfoUI from "./ui/business-info.tsx"
