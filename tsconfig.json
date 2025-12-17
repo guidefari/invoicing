@@ -6,7 +6,9 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "jsx": "preserve",
-    "jsxImportSource": "@opentui/solid",
+    // "jsxImportSource": "@opentui/solid",
+    // "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
     "allowJs": true,
 
     // Bundler mode
