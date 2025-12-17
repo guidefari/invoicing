@@ -30,11 +30,11 @@ export default {
 
 app.use("/static/*", serveStatic({ root: "./src/ui" }))
 
-import home from "./ui/routes/home.tsx"
-import businessInfoUI from "./ui/routes/business-info.tsx"
-import customersUI from "./ui/routes/customers.tsx"
-import productsUI from "./ui/routes/products.tsx"
-import invoicesUI from "./ui/routes/invoices.tsx"
+import home from "./ui/home.tsx"
+import businessInfoUI from "./ui/business-info.tsx"
+import customersUI from "./ui/customers.tsx"
+import productsUI from "./ui/products.tsx"
+import invoicesUI from "./ui/invoices.tsx"
 
 app.route("/", home)
 app.route("/business-info", businessInfoUI)

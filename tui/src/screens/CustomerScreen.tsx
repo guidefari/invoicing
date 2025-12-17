@@ -2,9 +2,12 @@ import { createSignal, createEffect, Show, onMount } from "solid-js"
 import { Effect } from "effect"
 import { TextAttributes } from "@opentui/core"
 import { useKeyboard } from "@opentui/solid"
-import type { Customer, CreateCustomerInput } from "../../types/index.ts"
-import { CustomerService } from "../../services/CustomerService.ts"
-import { AppLayer } from "../../runtime.ts"
+import {
+  type Customer,
+  type CreateCustomerInput,
+  CustomerService,
+  AppLayer
+} from "@invoicing/core"
 
 type ViewMode = "list" | "form"
 

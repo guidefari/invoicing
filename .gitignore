@@ -6,6 +6,12 @@ out
 dist
 *.tgz
 
+# turbo cache
+.turbo
+
+# compiled binaries
+tui/invoicing-cli
+
 # code coverage
 coverage
 *.lcov

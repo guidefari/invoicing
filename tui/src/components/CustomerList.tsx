@@ -1,9 +1,7 @@
 import { createSignal, createEffect, For, Show } from "solid-js"
 import { useKeyboard } from "@opentui/solid"
 import { Effect } from "effect"
-import { CustomerService } from "../services/CustomerService.ts"
-import { AppLayer } from "../runtime.ts"
-import type { Customer } from "../types/index.ts"
+import { CustomerService, AppLayer, type Customer } from "@invoicing/core"
 
 export function CustomerList() {
   const [customers, setCustomers] = createSignal<Customer[]>([])

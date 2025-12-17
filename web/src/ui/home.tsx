@@ -1,7 +1,7 @@
 /** @jsx jsx */
 /** @jsxImportSource hono/jsx */
 import { Hono } from "hono"
-import { Layout } from "../Layout.tsx"
+import { Layout } from "./Layout.tsx"
 
 const app = new Hono()
 

@@ -1,10 +1,10 @@
 import { createSignal, Switch, Match } from "solid-js"
 import { useKeyboard, useRenderer } from "@opentui/solid"
 import { TextAttributes } from "@opentui/core"
-import { CustomerScreen } from "./screens/CustomerScreen.tsx"
-import { ProductScreen } from "./screens/ProductScreen.tsx"
-import { InvoiceScreen } from "./screens/InvoiceScreen.tsx"
-import { SettingsScreen } from "./screens/SettingsScreen.tsx"
+import { CustomerScreen } from "../screens/CustomerScreen.tsx"
+import { ProductScreen } from "../screens/ProductScreen.tsx"
+import { InvoiceScreen } from "../screens/InvoiceScreen.tsx"
+import { SettingsScreen } from "../screens/SettingsScreen.tsx"
 
 type Screen = "main-menu" | "customers" | "products" | "invoices" | "settings"
 

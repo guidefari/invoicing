@@ -1,0 +1,32 @@
+{
+  "name": "@invoicing/core",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./db": "./src/db/index.ts",
+    "./services": "./src/services/index.ts",
+    "./types": "./src/types/index.ts",
+    "./runtime": "./src/runtime.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "clean": "rm -rf dist node_modules",
+    "db:push": "drizzle-kit push",
+    "db:gen": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@effect/platform": "^0.93.4",
+    "drizzle-orm": "^0.44.7",
+    "effect": "^3.19.7",
+    "puppeteer": "^24.31.0"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^12.4.6",
+    "drizzle-kit": "^0.31.7"
+  }
+}
