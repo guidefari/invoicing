@@ -99,6 +99,7 @@ export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
         <div class="bill-to">
           <div class="section-label">BILL TO</div>
           <div class="bill-to-name">${customer.name}</div>
+          ${customer.vatNumber ? `<div class="detail-line" style="font-weight: 600;">VAT: ${customer.vatNumber}</div>` : ""}
           <div class="detail-line">${customer.streetAddress}</div>
           <div class="detail-line">${customer.city}</div>
           <div class="detail-line">${customer.postalCode}, ${customer.country}</div>
@@ -169,6 +170,7 @@ export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
       <div class="footer-content">
         <div class="footer-left">
           <div class="name">${businessInfo.companyName}</div>
+          <div style="margin-bottom: 8px; font-weight: 600;">VAT: ${businessInfo.vatNumber}</div>
           <div>${businessInfo.streetAddress}</div>
           <div>${businessInfo.city}</div>
           <div>${businessInfo.postalCode}</div>
