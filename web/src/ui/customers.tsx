@@ -1,10 +1,9 @@
 /** @jsx jsx */
 /** @jsxImportSource hono/jsx */
 import { Hono } from "hono"
-import { Layout } from "../Layout.tsx"
+import { Layout } from "./Layout.tsx"
 import { Effect } from "effect"
-import { CustomerService } from "../../services/CustomerService.ts"
-import { AppRuntime } from "../../runtime.ts"
+import { CustomerService, AppRuntime } from "@invoicing/core"
 
 const app = new Hono()
 

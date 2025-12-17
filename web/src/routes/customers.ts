@@ -1,8 +1,6 @@
 import { Hono } from "hono"
 import { Effect } from "effect"
-import { CustomerService } from "../services/CustomerService.ts"
-import { AppRuntime } from "../runtime.ts"
-import type { CreateCustomerInput } from "../types/index.ts"
+import { CustomerService, AppRuntime, type CreateCustomerInput } from "@invoicing/core"
 
 const app = new Hono()
 

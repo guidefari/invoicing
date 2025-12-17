@@ -8,6 +8,7 @@ export class DatabaseError {
   constructor(readonly message: string, readonly cause?: unknown) {}
 }
 
+
 export interface DatabaseService {
   readonly db: BunSQLiteDatabase<typeof schema>
   readonly sqlite: SQLiteDatabase
@@ -108,7 +109,10 @@ const initializeDatabase = (dbPath: string): SQLiteDatabase => {
 }
 
 export const DatabaseLive = Layer.sync(Database, () => {
-  const sqlite = initializeDatabase("./invoices.db")
+  const rootDir = new URL("../../../", import.meta.url).pathname
+  const dbPath = `${rootDir}invoices.db`
+
+  const sqlite = initializeDatabase(dbPath)
   const db = drizzle(sqlite, { schema })
 
   return {

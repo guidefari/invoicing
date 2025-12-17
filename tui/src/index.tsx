@@ -1,4 +1,4 @@
 import { render } from "@opentui/solid"
-import { App } from "./ui/App.tsx"
+import { App } from "./components/App.tsx"
 
 render(() => <App />)

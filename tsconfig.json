@@ -1,40 +1,22 @@
 {
   "compilerOptions": {
-    // Environment setup & latest features
     "lib": ["ESNext"],
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
-    "jsx": "preserve",
-    // "jsxImportSource": "@opentui/solid",
-    // "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
-    "allowJs": true,
-
-    // Bundler mode
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
-
-    // Best practices
     "strict": true,
     "skipLibCheck": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "exactOptionalPropertyTypes": true,
-
-    // Development experience
-    // "declarationMap": true,
-    "sourceMap": true,
-
-    // Code quality
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": false,
-
-    // Effect Language Service
     "plugins": [
       {
         "name": "@effect/language-service"

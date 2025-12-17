@@ -1,0 +1,21 @@
+{
+  "name": "@invoicing/tui",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun src/index.tsx",
+    "build": "bun build src/index.tsx --outfile dist/index.js --target bun",
+    "compile": "bun build --compile src/index.tsx --outfile invoicing-cli",
+    "start": "bun dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules invoicing-cli"
+  },
+  "dependencies": {
+    "@invoicing/core": "workspace:*",
+    "@opentui/core": "^0.1.50",
+    "@opentui/solid": "^0.1.50",
+    "solid-js": "^1.9.10",
+    "effect": "^3.19.7"
+  }
+}

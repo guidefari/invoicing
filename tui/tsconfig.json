@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxImportSource": "@opentui/solid",
+    "baseUrl": ".",
+    "paths": {
+      "@invoicing/core": ["../core/src/index.ts"],
+      "@invoicing/core/*": ["../core/src/*"],
+      "@invoicing/tui": ["./src/index.ts"],
+      "@invoicing/tui/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*", "../core/src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
