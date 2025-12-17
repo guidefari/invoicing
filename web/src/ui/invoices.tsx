@@ -27,7 +27,7 @@ app.get("/", async (c) => {
         <a href="/invoices/new" class="btn btn-primary">New Invoice</a>
       </div>
 
-      <div class="card">
+      <div class="table-container">
         <table>
           <thead>
             <tr>
@@ -46,13 +46,13 @@ app.get("/", async (c) => {
                 <td>{new Date(invoice.dueDate).toLocaleDateString()}</td>
                 <td>{invoice.total.toFixed(2)}</td>
                 <td>
-                  <a href={`/invoices/${invoice.id}`} class="btn btn-link">View</a>
+                  <a href={`/invoices/${invoice.id}`} class="btn btn-outline text-sm">View</a>
                 </td>
               </tr>
             ))}
              {invoices.length === 0 && (
               <tr>
-                <td colspan={5} style="text-align: center; color: #666;">No invoices found.</td>
+                <td colspan={5} class="text-secondary" style="text-align: center;">No invoices found.</td>
               </tr>
             )}
           </tbody>
@@ -111,22 +111,24 @@ app.get("/new", async (c) => {
              <input type="number" id="vatRate" name="vatRate" step="0.01" />
           </div>
 
-          <h3>Line Items</h3>
-          <table id="lineItemsTable">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Description</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Rows added via JS */}
-            </tbody>
-          </table>
-          <button type="button" id="addLineItemBtn" class="btn btn-link" style="margin-top: 10px;">+ Add Line Item</button>
+          <h3 class="mb-4">Line Items</h3>
+          <div class="table-container mb-4">
+            <table id="lineItemsTable">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Description</th>
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Rows added via JS */}
+              </tbody>
+            </table>
+          </div>
+          <button type="button" id="addLineItemBtn" class="btn btn-outline mb-4">+ Add Line Item</button>
 
           <div class="mt-4">
             <button type="submit" class="btn btn-primary">Create Invoice</button>
@@ -208,7 +210,7 @@ app.get("/new", async (c) => {
                 lineItems: lineItems
             };
 
-            const res = await fetch('/invoices', {
+            const res = await fetch('/api/invoices', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -259,42 +261,43 @@ app.get("/:id", async (c) => {
                 </div>
             </div>
             
-            <h3>Line Items</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th>Qty</th>
-                        <th>Unit Price</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {invoice.lineItems.map(item => (
+            <h3 class="mb-4">Line Items</h3>
+            <div class="table-container mb-6">
+                <table>
+                    <thead>
                         <tr>
-                            <td>{item.description}</td>
-                            <td>{item.quantity}</td>
-                            <td>{item.unitPrice.toFixed(2)}</td>
-                            <td>{item.lineTotal.toFixed(2)}</td>
+                            <th>Description</th>
+                            <th>Qty</th>
+                            <th>Unit Price</th>
+                            <th>Total</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {invoice.lineItems.map(item => (
+                            <tr>
+                                <td>{item.description}</td>
+                                <td>{item.quantity}</td>
+                                <td>{item.unitPrice.toFixed(2)}</td>
+                                <td>{item.lineTotal.toFixed(2)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
 
-            <div class="flex justify-between mt-4" style="border-top: 1px solid #eee; padding-top: 10px;">
-                <div></div>
+            <div class="flex justify-end mt-4" style="border-top: 1px solid var(--border-color); padding-top: var(--space-4);">
                 <div style="width: 300px;">
-                    <div class="flex justify-between">
-                        <span>Subtotal:</span>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-secondary">Subtotal:</span>
                         <span>{invoice.subtotal.toFixed(2)}</span>
                     </div>
-                    <div class="flex justify-between">
-                        <span>VAT ({invoice.vatRate}%):</span>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-secondary">VAT ({invoice.vatRate}%):</span>
                         <span>{invoice.vatAmount.toFixed(2)}</span>
                     </div>
-                    <div class="flex justify-between" style="font-weight: bold; font-size: 1.2em; margin-top: 5px;">
+                    <div class="flex justify-between font-bold text-lg" style="padding-top: var(--space-2); border-top: 1px solid var(--border-color);">
                          <span>Total:</span>
-                         <span>{invoice.total.toFixed(2)}</span>
+                         <span class="text-primary">{invoice.total.toFixed(2)}</span>
                     </div>
                 </div>
             </div>
