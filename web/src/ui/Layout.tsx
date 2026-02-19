@@ -1,9 +1,9 @@
 /** @jsx jsx */
 /** @jsxImportSource hono/jsx */
 import { html } from "hono/html"
-import type { FC } from "hono/jsx"
+import type { FC, Child } from "hono/jsx"
 
-export const Layout: FC<{ title?: string; children: any }> = (props) => {
+export const Layout: FC<{ title?: string; children: Child }> = (props) => {
   return html`
     <!DOCTYPE html>
     <html lang="en">

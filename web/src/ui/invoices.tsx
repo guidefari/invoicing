@@ -46,7 +46,10 @@ app.get("/", async (c) => {
                 <td>{new Date(invoice.dueDate).toLocaleDateString()}</td>
                 <td>{invoice.total.toFixed(2)}</td>
                 <td>
-                  <a href={`/invoices/${invoice.id}`} class="btn btn-outline text-sm">View</a>
+                  <div class="flex gap-2">
+                    <a href={`/invoices/${invoice.id}`} class="btn btn-outline text-sm">View</a>
+                    <a href={`/invoices/${invoice.id}/edit`} class="btn btn-outline text-sm">Edit</a>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -244,9 +247,10 @@ app.get("/:id", async (c) => {
       <Layout title={`Invoice ${invoice.invoiceNumber}`}>
         <div class="flex justify-between items-center mb-4">
           <h1>Invoice {invoice.invoiceNumber}</h1>
-          <div class="flex gap-4">
+          <div class="flex gap-2">
+              <a href={`/invoices/${id}/edit`} class="btn btn-outline">Edit</a>
               <a href={`/api/invoices/${id}/pdf`} class="btn btn-primary" target="_blank">Download PDF</a>
-              <a href="/invoices" class="btn btn-link">Back to List</a>
+              <a href="/invoices" class="btn btn-outline">Back to List</a>
           </div>
         </div>
   
@@ -306,4 +310,183 @@ app.get("/:id", async (c) => {
     )
   })
 
+app.get("/:id/edit", async (c) => {
+    const id = Number(c.req.param("id"))
+    if (isNaN(id)) return c.text("Invalid ID", 400)
+  
+    const data = await AppRuntime.runPromise(
+      Effect.gen(function* () {
+        const invoiceService = yield* InvoiceService
+        const customerService = yield* CustomerService
+        const productService = yield* ProductService
+        
+        const invoice = yield* invoiceService.get(id)
+        if (!invoice) return undefined
+  
+        return {
+          invoice,
+          customers: yield* customerService.list(),
+          products: yield* productService.list(),
+        }
+      })
+    )
+  
+    if (!data) return c.text("Invoice not found", 404)
+  
+    return c.html(
+      <Layout title={`Edit Invoice ${data.invoice.invoiceNumber}`}>
+        <div class="flex justify-between items-center mb-4">
+          <h1>Edit Invoice {data.invoice.invoiceNumber}</h1>
+          <a href="/invoices" class="btn btn-outline">Back to List</a>
+        </div>
+  
+        <div class="card">
+          <form id="invoiceForm">
+            <div class="form-group">
+              <label for="customerId">Customer</label>
+              <select id="customerId" name="customerId" required>
+                <option value="">Select Customer</option>
+                {data.customers.map((cust) => (
+                  <option value={cust.id} selected={cust.id === data.invoice.customerId}>{cust.name}</option>
+                ))}
+              </select>
+            </div>
+  
+            <div class="form-group">
+              <label for="dueDate">Due Date</label>
+              <input type="date" id="dueDate" name="dueDate" value={data.invoice.dueDate} required />
+            </div>
+  
+            <div class="form-group">
+              <label for="notes">Notes</label>
+              <textarea id="notes" name="notes">{data.invoice.notes}</textarea>
+            </div>
+              
+            <div class="form-group">
+               <label for="vatRate">VAT Rate (%) (Optional override)</label>
+               <input type="number" id="vatRate" name="vatRate" value={data.invoice.vatRate ?? ""} step="0.01" />
+            </div>
+  
+            <h3 class="mb-4">Line Items</h3>
+            <div class="table-container mb-4">
+              <table id="lineItemsTable">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Description</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Rows added via JS */}
+                </tbody>
+              </table>
+            </div>
+            <button type="button" id="addLineItemBtn" class="btn btn-outline mb-4">+ Add Line Item</button>
+  
+            <div class="mt-4">
+              <button type="submit" class="btn btn-primary">Update Invoice</button>
+            </div>
+          </form>
+        </div>
+  
+        <script dangerouslySetInnerHTML={{ __html: `
+          const products = ${JSON.stringify(data.products)};
+          const existingLineItems = ${JSON.stringify(data.invoice.lineItems)};
+          
+          function addRow(item = null) {
+            const tbody = document.querySelector('#lineItemsTable tbody');
+            const tr = document.createElement('tr');
+            
+            let productOptions = '<option value="">Custom Item</option>';
+            products.forEach(p => {
+               const selected = (item && item.productId === p.id) ? 'selected' : '';
+               productOptions += \`<option value="\${p.id}" data-price="\${p.defaultPrice}" data-desc="\${p.description || ''}" \${selected}>\${p.name}</option>\`;
+            });
+  
+            tr.innerHTML = \`
+              <td><select class="product-select" style="width: 100%">\${productOptions}</select></td>
+              <td><input type="text" class="desc-input" value="\${item ? item.description : ''}" required></td>
+              <td><input type="number" class="qty-input" value="\${item ? item.quantity : 1}" min="1" required></td>
+              <td><input type="number" class="price-input" value="\${item ? item.unitPrice : ''}" step="0.01" required></td>
+              <td><button type="button" class="btn btn-danger remove-btn">Remove</button></td>
+            \`;
+            
+            tbody.appendChild(tr);
+  
+            const select = tr.querySelector('.product-select');
+            const descInput = tr.querySelector('.desc-input');
+            const priceInput = tr.querySelector('.price-input');
+            
+            select.addEventListener('change', (e) => {
+               const option = e.target.selectedOptions[0];
+               const price = option.getAttribute('data-price');
+               const desc = option.getAttribute('data-desc');
+               const name = option.text;
+  
+               if (e.target.value) {
+                  priceInput.value = price;
+                  descInput.value = desc || name;
+               } else {
+                  priceInput.value = '';
+                  descInput.value = '';
+               }
+            });
+            
+            tr.querySelector('.remove-btn').addEventListener('click', () => {
+               tr.remove();
+            });
+          }
+  
+          document.getElementById('addLineItemBtn').addEventListener('click', () => addRow());
+          
+          if (existingLineItems.length > 0) {
+            existingLineItems.forEach(item => addRow(item));
+          } else {
+            addRow();
+          }
+  
+          document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              
+              const lineItems = [];
+              document.querySelectorAll('#lineItemsTable tbody tr').forEach(tr => {
+                  const productId = tr.querySelector('.product-select').value;
+                  lineItems.push({
+                      productId: productId ? Number(productId) : null,
+                      description: tr.querySelector('.desc-input').value,
+                      quantity: Number(tr.querySelector('.qty-input').value),
+                      unitPrice: Number(tr.querySelector('.price-input').value),
+                  });
+              });
+  
+              const data = {
+                  customerId: Number(formData.get('customerId')),
+                  dueDate: formData.get('dueDate'),
+                  vatRate: formData.get('vatRate') ? Number(formData.get('vatRate')) : null,
+                  notes: formData.get('notes') || null,
+                  lineItems: lineItems
+              };
+  
+              const res = await fetch('/api/invoices/${id}', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(data)
+              });
+  
+              if (res.ok) {
+                  window.location.href = '/invoices/${id}';
+              } else {
+                  alert('Error updating invoice');
+              }
+          });
+        ` }} />
+      </Layout>
+    )
+  })
+
 export default app
+

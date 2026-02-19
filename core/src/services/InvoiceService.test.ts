@@ -5,7 +5,7 @@ import { BusinessInfoService, BusinessInfoServiceLive } from "./BusinessInfoServ
 import { CustomerService, CustomerServiceLive } from "./CustomerService.ts"
 import { ProductService, ProductServiceLive } from "./ProductService.ts"
 import { TestDatabaseLive } from "../db/test-utils.ts"
-import type { CreateInvoiceInput, CreateCustomerInput } from "../types/index.ts"
+import type { CreateInvoiceInput, CreateCustomerInput, UpdateInvoiceInput } from "../types/index.ts"
 
 const TestLayer = InvoiceServiceLive.pipe(
   Layer.provideMerge(ProductServiceLive),
@@ -371,4 +371,76 @@ describe("InvoiceService", () => {
     expect(result.vatAmount).toBe(150)
     expect(result.total).toBe(1150)
   })
+  
+  test("should update an existing invoice", async () => {
+    const result = await runTest(
+      Effect.gen(function* () {
+        const customerService = yield* CustomerService
+        const invoiceService = yield* InvoiceService
+
+        // 1. Setup - Create Customer and Invoice
+        const customer1 = yield* customerService.create({
+          name: "Original Customer",
+          vatNumber: "VAT1",
+          streetAddress: "123 Old St",
+          city: "Old City",
+          postalCode: "1111",
+          country: "SA",
+          email: "old@test.com",
+          phone: "111",
+        })
+
+        const customer2 = yield* customerService.create({
+          name: "Updated Customer",
+          vatNumber: "VAT2",
+          streetAddress: "456 New St",
+          city: "New City",
+          postalCode: "2222",
+          country: "SA",
+          email: "new@test.com",
+          phone: "222",
+        })
+
+        const initialInvoice = yield* invoiceService.create({
+          customerId: customer1.id,
+          dueDate: "2025-01-01",
+          vatRate: 15,
+          notes: "Original notes",
+          lineItems: [
+            { productId: null, description: "Old Item", quantity: 1, unitPrice: 100 }
+          ]
+        })
+
+        // 2. Act - Update the invoice
+        const updateInput: UpdateInvoiceInput = {
+          customerId: customer2.id,
+          dueDate: "2025-02-02",
+          vatRate: 10,
+          notes: "Updated notes",
+          lineItems: [
+            { productId: null, description: "New Item 1", quantity: 2, unitPrice: 200 },
+            { productId: null, description: "New Item 2", quantity: 1, unitPrice: 50 }
+          ]
+        }
+
+        yield* invoiceService.update(initialInvoice.id, updateInput)
+
+        // 3. Retrieve and Return
+        return yield* invoiceService.get(initialInvoice.id)
+      })
+    )
+
+    expect(result).toBeDefined()
+    expect(result?.customerId).toBeGreaterThan(0) // customer2.id
+    expect(result?.dueDate).toBe("2025-02-02")
+    expect(result?.vatRate).toBe(10)
+    expect(result?.notes).toBe("Updated notes")
+    expect(result?.lineItems).toHaveLength(2)
+    expect(result?.lineItems[0]?.description).toBe("New Item 1")
+    expect(result?.lineItems[1]?.description).toBe("New Item 2")
+    expect(result?.subtotal).toBe(450) // (2 * 200) + (1 * 50)
+    expect(result?.vatAmount).toBe(45) // 10% of 450
+    expect(result?.total).toBe(495)
+  })
 })
+

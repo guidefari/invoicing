@@ -4,7 +4,8 @@ import {
   InvoiceService,
   InvoicePDFService,
   AppRuntime,
-  type CreateInvoiceInput
+  type CreateInvoiceInput,
+  type UpdateInvoiceInput
 } from "@invoicing/core"
 
 const app = new Hono()
@@ -58,6 +59,28 @@ app.get("/:id", async (c) => {
       if (!invoice) {
         return c.json({ error: "Invoice not found" }, 404)
       }
+      return c.json(invoice)
+    } catch (error) {
+      console.error("Request error:", error)
+      return c.json(
+        { error: error instanceof Error ? error.message : "Internal server error" },
+        500
+      )
+    }
+})
+
+app.put("/:id", async (c) => {
+    try {
+      const id = Number.parseInt(c.req.param("id"))
+      if (isNaN(id)) {
+        return c.json({ error: "Invalid ID parameter" }, 400)
+      }
+      const body = await c.req.json<UpdateInvoiceInput>()
+      const program = Effect.gen(function* () {
+        const service = yield* InvoiceService
+        return yield* service.update(id, body)
+      })
+      const invoice = await AppRuntime.runPromise(program)
       return c.json(invoice)
     } catch (error) {
       console.error("Request error:", error)

@@ -118,3 +118,6 @@ export interface CreateLineItemInput {
   unitPrice?: number
   additionalNotes?: string | null
 }
+
+export interface UpdateInvoiceInput extends CreateInvoiceInput {}
+

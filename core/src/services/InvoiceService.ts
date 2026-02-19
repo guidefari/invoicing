@@ -4,7 +4,7 @@ import { Database, DatabaseError } from "./Database.ts"
 import { ProductService } from "./ProductService.ts"
 import { BusinessInfoService } from "./BusinessInfoService.ts"
 import { invoices, invoiceLineItems } from "../db/drizzle-schema.ts"
-import type { Invoice, InvoiceLineItem, CreateInvoiceInput } from "../types/index.ts"
+import type { Invoice, InvoiceLineItem, CreateInvoiceInput, UpdateInvoiceInput, CreateLineItemInput } from "../types/index.ts"
 
 export interface InvoiceWithLineItems extends Invoice {
   lineItems: InvoiceLineItem[]
@@ -16,6 +16,7 @@ export class InvoiceService extends Context.Tag("InvoiceService")<
     readonly list: () => Effect.Effect<Invoice[], DatabaseError>
     readonly get: (id: number) => Effect.Effect<InvoiceWithLineItems | undefined, DatabaseError>
     readonly create: (input: CreateInvoiceInput) => Effect.Effect<InvoiceWithLineItems, DatabaseError>
+    readonly update: (id: number, input: UpdateInvoiceInput) => Effect.Effect<InvoiceWithLineItems, DatabaseError>
     readonly getNextInvoiceNumber: () => Effect.Effect<string, DatabaseError>
   }
 >() {}
@@ -198,6 +199,131 @@ export const InvoiceServiceLive = Layer.effect(
                 .where(eq(invoiceLineItems.invoiceId, invoice.id))
                 .all(),
             catch: (error) => new DatabaseError("Failed to get created invoice line items", error),
+          })
+
+          return {
+            ...invoice,
+            lineItems: lineItemsResult as InvoiceLineItem[],
+          } as InvoiceWithLineItems
+        }),
+
+      update: (id: number, input: UpdateInvoiceInput) =>
+        Effect.gen(function* () {
+          const enrichedLineItems = yield* Effect.all(
+            input.lineItems.map((item: CreateLineItemInput) =>
+              Effect.gen(function* () {
+                let description = item.description
+                let unitPrice = item.unitPrice
+
+                if (item.productId !== null && (description === undefined || unitPrice === undefined)) {
+                  const product = yield* productService.get(item.productId)
+                  if (!product) {
+                    return yield* Effect.fail(
+                      new DatabaseError(`Product with ID ${item.productId} not found`)
+                    )
+                  }
+                  description = description ?? product.name
+                  unitPrice = unitPrice ?? product.defaultPrice
+                }
+
+                if (description === undefined || unitPrice === undefined) {
+                  return yield* Effect.fail(
+                    new DatabaseError(
+                      "Line item must have either productId or both description and unitPrice"
+                    )
+                  )
+                }
+
+                return {
+                  productId: item.productId,
+                  description,
+                  quantity: item.quantity,
+                  unitPrice,
+                  additionalNotes: item.additionalNotes ?? null,
+                } as const
+              })
+            )
+          )
+
+          const subtotal = enrichedLineItems.reduce(
+            (sum: number, item) => sum + item.quantity * item.unitPrice,
+            0
+          )
+
+          let effectiveVatRate = 0
+          if (input.vatRate !== null && input.vatRate !== undefined) {
+             effectiveVatRate = input.vatRate
+          } else {
+             const businessInfo = yield* businessInfoService.get()
+             if (businessInfo?.defaultVatRate) {
+                effectiveVatRate = businessInfo.defaultVatRate
+             }
+          }
+
+          const vatAmount = subtotal * (effectiveVatRate / 100)
+          const total = subtotal + vatAmount
+
+          yield* Effect.try({
+            try: () =>
+              database.db
+                .update(invoices)
+                .set({
+                  customerId: input.customerId,
+                  dueDate: input.dueDate,
+                  vatRate: effectiveVatRate,
+                  notes: input.notes,
+                  subtotal,
+                  vatAmount,
+                  total,
+                })
+                .where(eq(invoices.id, id))
+                .run(),
+            catch: (error) => new DatabaseError("Failed to update invoice", error),
+          })
+
+          // Update line items: simplest way is to delete and re-insert
+          yield* Effect.try({
+            try: () => database.db.delete(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, id)).run(),
+            catch: (error) => new DatabaseError("Failed to delete old line items", error),
+          })
+
+          for (const item of enrichedLineItems) {
+            const lineTotal = item.quantity * item.unitPrice
+            yield* Effect.try({
+              try: () =>
+                database.db
+                  .insert(invoiceLineItems)
+                  .values({
+                    invoiceId: id,
+                    productId: item.productId,
+                    description: item.description,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    lineTotal,
+                    additionalNotes: item.additionalNotes,
+                  })
+                  .run(),
+              catch: (error) => new DatabaseError("Failed to create invoice line item", error),
+            })
+          }
+
+          const invoice = yield* Effect.try({
+            try: () => database.db.select().from(invoices).where(eq(invoices.id, id)).get(),
+            catch: (error) => new DatabaseError("Failed to retrieve updated invoice", error),
+          })
+
+          if (!invoice) {
+            return yield* Effect.fail(new DatabaseError("Failed to retrieve updated invoice"))
+          }
+
+          const lineItemsResult = yield* Effect.try({
+            try: () =>
+              database.db
+                .select()
+                .from(invoiceLineItems)
+                .where(eq(invoiceLineItems.invoiceId, id))
+                .all(),
+            catch: (error) => new DatabaseError("Failed to get updated invoice line items", error),
           })
 
           return {
