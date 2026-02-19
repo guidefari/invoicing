@@ -16,10 +16,13 @@ app.get("/", async (c) => {
   )
 
   return c.html(
-    <Layout title="Products">
-      <div class="flex justify-between items-center mb-4">
+    <Layout title="Products" currentPath="/products">
+      <div class="page-header">
         <h1>Products</h1>
-        <a href="/products/new" class="btn btn-primary">New Product</a>
+        <a href="/products/new" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Product
+        </a>
       </div>
 
       <div class="table-container">
@@ -28,7 +31,7 @@ app.get("/", async (c) => {
             <tr>
               <th>Name</th>
               <th>Description</th>
-              <th>Price</th>
+              <th>Default Price</th>
               <th class="text-right">Actions</th>
             </tr>
           </thead>
@@ -36,23 +39,25 @@ app.get("/", async (c) => {
             {products.map((product) => (
               <tr>
                 <td class="font-medium">{product.name}</td>
-                <td class="text-secondary">{product.description || "-"}</td>
-                <td class="font-bold">{product.defaultPrice.toFixed(2)}</td>
-                <td class="text-right">
-                  <a href={`/products/${product.id}`} class="btn btn-outline text-sm">Edit</a>
+                <td class="text-secondary">{product.description || "—"}</td>
+                <td class="font-semibold">{product.defaultPrice.toFixed(2)}</td>
+                <td class="text-right td-actions">
+                  <a href={`/products/${product.id}`} class="btn btn-sm btn-outline">Edit</a>
                 </td>
               </tr>
             ))}
             {products.length === 0 && (
               <tr>
-                <td colspan={4} class="text-secondary" style="text-align: center;">No products found.</td>
+                <td colspan={4}>
+                  <div class="empty-state">
+                    <p>No products yet. Add items to your catalog to use them on invoices.</p>
+                    <a href="/products/new" class="btn btn-primary btn-sm">Add Product</a>
+                  </div>
+                </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
-       <div class="mt-4">
-         <a href="/" class="btn btn-link">Back to Dashboard</a>
       </div>
     </Layout>
   )
@@ -60,31 +65,34 @@ app.get("/", async (c) => {
 
 app.get("/new", (c) => {
   return c.html(
-    <Layout title="New Product">
-      <div class="flex justify-between items-center mb-4">
+    <Layout title="New Product" currentPath="/products">
+      <div class="page-header">
         <h1>New Product</h1>
-        <a href="/products" class="btn btn-link">Back to List</a>
+        <a href="/products" class="btn btn-outline">Back to Products</a>
       </div>
 
       <div class="card">
         <form method="post" action="/products">
-          <div class="form-group">
-            <label for="name">Name</label>
-            <input type="text" id="name" name="name" required />
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="name">Name <span class="required">*</span></label>
+              <input type="text" id="name" name="name" required />
+            </div>
+
+            <div class="form-group full-width">
+              <label for="description">Description</label>
+              <textarea id="description" name="description"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="defaultPrice">Default Price <span class="required">*</span></label>
+              <input type="number" id="defaultPrice" name="defaultPrice" step="0.01" min="0" required />
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="description">Description</label>
-            <textarea id="description" name="description"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="defaultPrice">Price</label>
-            <input type="number" id="defaultPrice" name="defaultPrice" step="0.01" required />
-          </div>
-
-          <div class="mt-4">
+          <div class="flex gap-2 mt-4">
             <button type="submit" class="btn btn-primary">Create Product</button>
+            <a href="/products" class="btn btn-ghost">Cancel</a>
           </div>
         </form>
       </div>
@@ -123,36 +131,39 @@ app.get("/:id", async (c) => {
   if (!product) return c.text("Product not found", 404)
 
   return c.html(
-    <Layout title={`Edit Product: ${product.name}`}>
-      <div class="flex justify-between items-center mb-6">
-        <h1>Edit Product</h1>
+    <Layout title={`${product.name}`} currentPath="/products">
+      <div class="page-header">
+        <h1>{product.name}</h1>
         <div class="flex gap-2">
-            <form method="post" action={`/products/${id}/delete`} onsubmit="return confirm('Are you sure?');" style="display:inline;">
-                <button type="submit" class="btn btn-danger">Delete</button>
-            </form>
-            <a href="/products" class="btn btn-outline text-sm">Back to List</a>
+          <a href="/products" class="btn btn-outline">Back to Products</a>
+          <form method="post" action={`/products/${id}/delete`} onsubmit="return confirm('Delete this product?');" style="display:inline;">
+            <button type="submit" class="btn btn-danger">Delete</button>
+          </form>
         </div>
       </div>
 
       <div class="card">
         <form method="post" action={`/products/${id}`}>
-          <div class="form-group">
-             <label for="name">Name</label>
-            <input type="text" id="name" name="name" value={product.name} required />
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="name">Name <span class="required">*</span></label>
+              <input type="text" id="name" name="name" value={product.name} required />
+            </div>
+
+            <div class="form-group full-width">
+              <label for="description">Description</label>
+              <textarea id="description" name="description">{product.description || ""}</textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="defaultPrice">Default Price <span class="required">*</span></label>
+              <input type="number" id="defaultPrice" name="defaultPrice" value={product.defaultPrice} step="0.01" min="0" required />
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="description">Description</label>
-            <textarea id="description" name="description">{product.description || ""}</textarea>
-          </div>
-
-           <div class="form-group">
-            <label for="defaultPrice">Price</label>
-            <input type="number" id="defaultPrice" name="defaultPrice" value={product.defaultPrice} step="0.01" required />
-          </div>
-
-          <div class="mt-4">
-            <button type="submit" class="btn btn-primary">Update Product</button>
+          <div class="flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="/products" class="btn btn-ghost">Cancel</a>
           </div>
         </form>
       </div>

@@ -21,10 +21,11 @@ app.get("/", async (c) => {
   );
 
   return c.html(
-    <Layout title="Invoices">
-      <div class="flex justify-between items-center mb-4">
+    <Layout title="Invoices" currentPath="/invoices">
+      <div class="page-header">
         <h1>Invoices</h1>
         <a href="/invoices/new" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New Invoice
         </a>
       </div>
@@ -36,53 +37,41 @@ app.get("/", async (c) => {
               <th>Invoice #</th>
               <th>Date</th>
               <th>Due Date</th>
-              <th>Total</th>
-              <th>Actions</th>
+              <th class="text-right">Total</th>
+              <th class="text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {invoices.map((invoice) => (
               <tr>
-                <td>{invoice.invoiceNumber}</td>
-                <td>{new Date(invoice.createdAt).toLocaleDateString()}</td>
-                <td>{new Date(invoice.dueDate).toLocaleDateString()}</td>
-                <td>{invoice.total.toFixed(2)}</td>
                 <td>
-                  <div class="flex gap-2">
-                    <a
-                      href={`/invoices/${invoice.id}`}
-                      class="btn btn-outline text-sm"
-                    >
-                      View
-                    </a>
-                    <a
-                      href={`/invoices/${invoice.id}/edit`}
-                      class="btn btn-outline text-sm"
-                    >
-                      Edit
-                    </a>
+                  <a href={`/invoices/${invoice.id}`} class="font-semibold">
+                    {invoice.invoiceNumber}
+                  </a>
+                </td>
+                <td class="text-secondary">{new Date(invoice.createdAt).toLocaleDateString()}</td>
+                <td class="text-secondary">{new Date(invoice.dueDate).toLocaleDateString()}</td>
+                <td class="text-right font-semibold">{invoice.total.toFixed(2)}</td>
+                <td class="text-right td-actions">
+                  <div class="flex gap-2 justify-end">
+                    <a href={`/invoices/${invoice.id}`} class="btn btn-sm btn-outline">View</a>
+                    <a href={`/invoices/${invoice.id}/edit`} class="btn btn-sm btn-ghost">Edit</a>
                   </div>
                 </td>
               </tr>
             ))}
             {invoices.length === 0 && (
               <tr>
-                <td
-                  colspan={5}
-                  class="text-secondary"
-                  style="text-align: center;"
-                >
-                  No invoices found.
+                <td colspan={5}>
+                  <div class="empty-state">
+                    <p>No invoices yet. Create your first invoice to get started.</p>
+                    <a href="/invoices/new" class="btn btn-primary btn-sm">Create Invoice</a>
+                  </div>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </div>
-      <div class="mt-4">
-        <a href="/" class="btn btn-link">
-          Back to Dashboard
-        </a>
       </div>
     </Layout>,
   );
@@ -101,68 +90,69 @@ app.get("/new", async (c) => {
   );
 
   return c.html(
-    <Layout title="New Invoice">
-      <div class="flex justify-between items-center mb-4">
+    <Layout title="New Invoice" currentPath="/invoices">
+      <div class="page-header">
         <h1>New Invoice</h1>
-        <a href="/invoices" class="btn btn-link">
-          Back to List
-        </a>
+        <a href="/invoices" class="btn btn-outline">Back to Invoices</a>
       </div>
 
       <div class="card">
         <form id="invoiceForm">
-          <div class="form-group">
-            <label for="customerId">Customer</label>
-            <select id="customerId" name="customerId" required>
-              <option value="">Select Customer</option>
-              {data.customers.map((cust) => (
-                <option value={cust.id}>{cust.name}</option>
-              ))}
-            </select>
+          <div class="form-section">
+            <div class="form-section-title">Invoice Details</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="customerId">Customer <span class="required">*</span></label>
+                <select id="customerId" name="customerId" required>
+                  <option value="">Select a customer…</option>
+                  {data.customers.map((cust) => (
+                    <option value={cust.id}>{cust.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="dueDate">Due Date <span class="required">*</span></label>
+                <input type="date" id="dueDate" name="dueDate" required />
+              </div>
+
+              <div class="form-group">
+                <label for="vatRate">VAT Rate Override (%)</label>
+                <input type="number" id="vatRate" name="vatRate" step="0.01" min="0" max="100" placeholder="Uses business default" />
+              </div>
+
+              <div class="form-group full-width">
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="notes" placeholder="Any additional notes for this invoice…"></textarea>
+              </div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="dueDate">Due Date</label>
-            <input type="date" id="dueDate" name="dueDate" required />
-          </div>
-
-          <div class="form-group">
-            <label for="notes">Notes</label>
-            <textarea id="notes" name="notes"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="vatRate">VAT Rate (%) (Optional override)</label>
-            <input type="number" id="vatRate" name="vatRate" step="0.01" />
-          </div>
-
-          <h3 class="mb-4">Line Items</h3>
-          <div class="table-container mb-4">
-            <table id="lineItemsTable">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Description</th>
-                  <th>Quantity</th>
-                  <th>Unit Price</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>{/* Rows added via JS */}</tbody>
-            </table>
-          </div>
-          <button
-            type="button"
-            id="addLineItemBtn"
-            class="btn btn-outline mb-4"
-          >
-            + Add Line Item
-          </button>
-
-          <div class="mt-4">
-            <button type="submit" class="btn btn-primary">
-              Create Invoice
+          <div class="form-section">
+            <div class="form-section-title">Line Items</div>
+            <div class="table-container mb-4" style="box-shadow: none;">
+              <table id="lineItemsTable">
+                <thead>
+                  <tr>
+                    <th style="width: 200px;">Product</th>
+                    <th>Description</th>
+                    <th style="width: 100px;">Qty</th>
+                    <th style="width: 130px;">Unit Price</th>
+                    <th style="width: 48px;"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <button type="button" id="addLineItemBtn" class="btn btn-outline btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Line Item
             </button>
+          </div>
+
+          <div class="flex gap-2 mt-6">
+            <button type="submit" class="btn btn-primary">Create Invoice</button>
+            <a href="/invoices" class="btn btn-ghost">Cancel</a>
           </div>
         </form>
       </div>
@@ -171,30 +161,34 @@ app.get("/new", async (c) => {
         dangerouslySetInnerHTML={{
           __html: `
         const products = ${JSON.stringify(data.products)};
-        
+
         function addRow() {
           const tbody = document.querySelector('#lineItemsTable tbody');
           const tr = document.createElement('tr');
-          
-          let productOptions = '<option value="">Custom Item</option>';
+
+          let productOptions = '<option value="">Custom item</option>';
           products.forEach(p => {
              productOptions += \`<option value="\${p.id}" data-price="\${p.defaultPrice}" data-desc="\${p.description || ''}">\${p.name}</option>\`;
           });
 
           tr.innerHTML = \`
-            <td><select class="product-select" style="width: 100%">\${productOptions}</select></td>
-            <td><input type="text" class="desc-input" required></td>
+            <td><select class="product-select">\${productOptions}</select></td>
+            <td><input type="text" class="desc-input" placeholder="Description" required></td>
             <td><input type="number" class="qty-input" value="1" step="any" min="0.01" required></td>
-            <td><input type="number" class="price-input" step="0.01" required></td>
-            <td><button type="button" class="btn btn-danger remove-btn">Remove</button></td>
+            <td><input type="number" class="price-input" step="0.01" min="0" placeholder="0.00" required></td>
+            <td style="padding: 0.5rem;">
+              <button type="button" class="btn btn-ghost btn-sm remove-btn" aria-label="Remove row" style="padding: 0.375rem; color: var(--danger);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              </button>
+            </td>
           \`;
-          
+
           tbody.appendChild(tr);
 
           const select = tr.querySelector('.product-select');
           const descInput = tr.querySelector('.desc-input');
           const priceInput = tr.querySelector('.price-input');
-          
+
           select.addEventListener('change', (e) => {
              const option = e.target.selectedOptions[0];
              const price = option.getAttribute('data-price');
@@ -203,27 +197,29 @@ app.get("/new", async (c) => {
 
              if (e.target.value) {
                 priceInput.value = price;
-                descInput.value = desc || name; // Use name if desc is null
+                descInput.value = desc || name;
              } else {
                 priceInput.value = '';
                 descInput.value = '';
              }
           });
-          
+
           tr.querySelector('.remove-btn').addEventListener('click', () => {
              tr.remove();
           });
         }
 
         document.getElementById('addLineItemBtn').addEventListener('click', addRow);
-        
-        // Add one initial row
         addRow();
 
         document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const submitBtn = e.target.querySelector('[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating…';
+
             const formData = new FormData(e.target);
-            
+
             const lineItems = [];
             document.querySelectorAll('#lineItemsTable tbody tr').forEach(tr => {
                 const productId = tr.querySelector('.product-select').value;
@@ -252,7 +248,9 @@ app.get("/new", async (c) => {
             if (res.ok) {
                 window.location.href = '/invoices';
             } else {
-                alert('Error creating invoice');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Invoice';
+                alert('Error creating invoice. Please try again.');
             }
         });
       `,
@@ -276,84 +274,61 @@ app.get("/:id", async (c) => {
   if (!invoice) return c.text("Invoice not found", 404);
 
   return c.html(
-    <Layout title={`Invoice ${invoice.invoiceNumber}`}>
-      <div class="flex justify-between items-center mb-4">
-        <h1>Invoice {invoice.invoiceNumber}</h1>
+    <Layout title={`Invoice ${invoice.invoiceNumber}`} currentPath="/invoices">
+      <div class="page-header">
+        <div>
+          <h1 style="margin-bottom: 0.25rem;">Invoice {invoice.invoiceNumber}</h1>
+          <p style="margin: 0; font-size: 0.875rem;">
+            Issued {new Date(invoice.createdAt).toLocaleDateString("en-ZA", { year: "numeric", month: "long", day: "numeric" })}
+            {" · "}Due {new Date(invoice.dueDate).toLocaleDateString("en-ZA", { year: "numeric", month: "long", day: "numeric" })}
+          </p>
+        </div>
         <div class="flex gap-2">
-          <a href={`/invoices/${id}/edit`} class="btn btn-outline">
-            Edit
-          </a>
-          <a
-            href={`/api/invoices/${id}/pdf`}
-            class="btn btn-primary"
-            target="_blank"
-          >
+          <a href={`/invoices/${id}/edit`} class="btn btn-outline">Edit</a>
+          <a href={`/api/invoices/${id}/pdf`} class="btn btn-primary" target="_blank" rel="noopener">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download PDF
           </a>
-          <a href="/invoices" class="btn btn-outline">
-            Back to List
-          </a>
+          <a href="/invoices" class="btn btn-ghost">Back</a>
         </div>
       </div>
 
       <div class="card">
-        <div class="flex justify-between mb-4">
-          <div>
-            <strong>Date:</strong>{" "}
-            {new Date(invoice.createdAt).toLocaleDateString()}
-            <br />
-            <strong>Due Date:</strong>{" "}
-            {new Date(invoice.dueDate).toLocaleDateString()}
-          </div>
-          <div class="text-right">
-            <strong>Total:</strong> {invoice.total.toFixed(2)}
-          </div>
-        </div>
-
-        <h3 class="mb-4">Line Items</h3>
-        <div class="table-container mb-6">
+        <div class="table-container mb-6" style="box-shadow: none; border-color: var(--border-color);">
           <table>
             <thead>
               <tr>
                 <th>Description</th>
-                <th>Qty</th>
-                <th>Unit Price</th>
-                <th>Total</th>
+                <th style="width: 80px;">Qty</th>
+                <th style="width: 130px;" class="text-right">Unit Price</th>
+                <th style="width: 130px;" class="text-right">Total</th>
               </tr>
             </thead>
             <tbody>
               {invoice.lineItems.map((item) => (
                 <tr>
                   <td>{item.description}</td>
-                  <td>{item.quantity}</td>
-                  <td>{item.unitPrice.toFixed(2)}</td>
-                  <td>{item.lineTotal.toFixed(2)}</td>
+                  <td class="text-secondary">{item.quantity}</td>
+                  <td class="text-right">{item.unitPrice.toFixed(2)}</td>
+                  <td class="text-right font-semibold">{item.lineTotal.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <div
-          class="flex justify-end mt-4"
-          style="border-top: 1px solid var(--border-color); padding-top: var(--space-4);"
-        >
-          <div style="width: 300px;">
-            <div class="flex justify-between mb-1">
-              <span class="text-secondary">Subtotal:</span>
-              <span>{invoice.subtotal.toFixed(2)}</span>
-            </div>
-            <div class="flex justify-between mb-2">
-              <span class="text-secondary">VAT ({invoice.vatRate}%):</span>
-              <span>{invoice.vatAmount.toFixed(2)}</span>
-            </div>
-            <div
-              class="flex justify-between font-bold text-lg"
-              style="padding-top: var(--space-2); border-top: 1px solid var(--border-color);"
-            >
-              <span>Total:</span>
-              <span class="text-primary">{invoice.total.toFixed(2)}</span>
-            </div>
+        <div class="totals-box">
+          <div class="totals-row">
+            <span class="text-secondary">Subtotal</span>
+            <span>{invoice.subtotal.toFixed(2)}</span>
+          </div>
+          <div class="totals-row">
+            <span class="text-secondary">VAT ({invoice.vatRate}%)</span>
+            <span>{invoice.vatAmount.toFixed(2)}</span>
+          </div>
+          <div class="totals-row total-final">
+            <span>Total</span>
+            <span class="amount">{invoice.total.toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -385,87 +360,71 @@ app.get("/:id/edit", async (c) => {
   if (!data) return c.text("Invoice not found", 404);
 
   return c.html(
-    <Layout title={`Edit Invoice ${data.invoice.invoiceNumber}`}>
-      <div class="flex justify-between items-center mb-4">
-        <h1>Edit Invoice {data.invoice.invoiceNumber}</h1>
-        <a href="/invoices" class="btn btn-outline">
-          Back to List
-        </a>
+    <Layout title={`Edit ${data.invoice.invoiceNumber}`} currentPath="/invoices">
+      <div class="page-header">
+        <h1>Edit {data.invoice.invoiceNumber}</h1>
+        <a href={`/invoices/${id}`} class="btn btn-outline">Cancel</a>
       </div>
 
       <div class="card">
         <form id="invoiceForm">
-          <div class="form-group">
-            <label for="customerId">Customer</label>
-            <select id="customerId" name="customerId" required>
-              <option value="">Select Customer</option>
-              {data.customers.map((cust) => (
-                <option
-                  value={cust.id}
-                  selected={cust.id === data.invoice.customerId}
-                >
-                  {cust.name}
-                </option>
-              ))}
-            </select>
+          <div class="form-section">
+            <div class="form-section-title">Invoice Details</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="customerId">Customer <span class="required">*</span></label>
+                <select id="customerId" name="customerId" required>
+                  <option value="">Select a customer…</option>
+                  {data.customers.map((cust) => (
+                    <option value={cust.id} selected={cust.id === data.invoice.customerId}>
+                      {cust.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="dueDate">Due Date <span class="required">*</span></label>
+                <input type="date" id="dueDate" name="dueDate" value={data.invoice.dueDate} required />
+              </div>
+
+              <div class="form-group">
+                <label for="vatRate">VAT Rate Override (%)</label>
+                <input type="number" id="vatRate" name="vatRate" value={data.invoice.vatRate ?? ""} step="0.01" min="0" max="100" placeholder="Uses business default" />
+              </div>
+
+              <div class="form-group full-width">
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="notes">{data.invoice.notes}</textarea>
+              </div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="dueDate">Due Date</label>
-            <input
-              type="date"
-              id="dueDate"
-              name="dueDate"
-              value={data.invoice.dueDate}
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="notes">Notes</label>
-            <textarea id="notes" name="notes">
-              {data.invoice.notes}
-            </textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="vatRate">VAT Rate (%) (Optional override)</label>
-            <input
-              type="number"
-              id="vatRate"
-              name="vatRate"
-              value={data.invoice.vatRate ?? ""}
-              step="0.01"
-            />
-          </div>
-
-          <h3 class="mb-4">Line Items</h3>
-          <div class="table-container mb-4">
-            <table id="lineItemsTable">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Description</th>
-                  <th>Quantity</th>
-                  <th>Unit Price</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>{/* Rows added via JS */}</tbody>
-            </table>
-          </div>
-          <button
-            type="button"
-            id="addLineItemBtn"
-            class="btn btn-outline mb-4"
-          >
-            + Add Line Item
-          </button>
-
-          <div class="mt-4">
-            <button type="submit" class="btn btn-primary">
-              Update Invoice
+          <div class="form-section">
+            <div class="form-section-title">Line Items</div>
+            <div class="table-container mb-4" style="box-shadow: none;">
+              <table id="lineItemsTable">
+                <thead>
+                  <tr>
+                    <th style="width: 200px;">Product</th>
+                    <th>Description</th>
+                    <th style="width: 100px;">Qty</th>
+                    <th style="width: 130px;">Unit Price</th>
+                    <th style="width: 48px;"></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <button type="button" id="addLineItemBtn" class="btn btn-outline btn-sm">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Line Item
             </button>
+          </div>
+
+          <div class="flex gap-2 mt-6">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href={`/invoices/${id}`} class="btn btn-ghost">Cancel</a>
           </div>
         </form>
       </div>
@@ -475,37 +434,41 @@ app.get("/:id/edit", async (c) => {
           __html: `
           const products = ${JSON.stringify(data.products)};
           const existingLineItems = ${JSON.stringify(data.invoice.lineItems)};
-          
+
           function addRow(item = null) {
             const tbody = document.querySelector('#lineItemsTable tbody');
             const tr = document.createElement('tr');
-            
-            let productOptions = '<option value="">Custom Item</option>';
+
+            let productOptions = '<option value="">Custom item</option>';
             products.forEach(p => {
                const selected = (item && item.productId === p.id) ? 'selected' : '';
                productOptions += \`<option value="\${p.id}" data-price="\${p.defaultPrice}" data-desc="\${p.description || ''}" \${selected}>\${p.name}</option>\`;
             });
-  
+
             tr.innerHTML = \`
-              <td><select class="product-select" style="width: 100%">\${productOptions}</select></td>
-              <td><input type="text" class="desc-input" value="\${item ? item.description : ''}" required></td>
+              <td><select class="product-select">\${productOptions}</select></td>
+              <td><input type="text" class="desc-input" value="\${item ? item.description.replace(/"/g, '&quot;') : ''}" placeholder="Description" required></td>
               <td><input type="number" class="qty-input" value="\${item ? item.quantity : 1}" step="any" min="0.01" required></td>
-              <td><input type="number" class="price-input" value="\${item ? item.unitPrice : ''}" step="0.01" required></td>
-              <td><button type="button" class="btn btn-danger remove-btn">Remove</button></td>
+              <td><input type="number" class="price-input" value="\${item ? item.unitPrice : ''}" step="0.01" min="0" placeholder="0.00" required></td>
+              <td style="padding: 0.5rem;">
+                <button type="button" class="btn btn-ghost btn-sm remove-btn" aria-label="Remove row" style="padding: 0.375rem; color: var(--danger);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                </button>
+              </td>
             \`;
-            
+
             tbody.appendChild(tr);
-  
+
             const select = tr.querySelector('.product-select');
             const descInput = tr.querySelector('.desc-input');
             const priceInput = tr.querySelector('.price-input');
-            
+
             select.addEventListener('change', (e) => {
                const option = e.target.selectedOptions[0];
                const price = option.getAttribute('data-price');
                const desc = option.getAttribute('data-desc');
                const name = option.text;
-  
+
                if (e.target.value) {
                   priceInput.value = price;
                   descInput.value = desc || name;
@@ -514,24 +477,28 @@ app.get("/:id/edit", async (c) => {
                   descInput.value = '';
                }
             });
-            
+
             tr.querySelector('.remove-btn').addEventListener('click', () => {
                tr.remove();
             });
           }
-  
+
           document.getElementById('addLineItemBtn').addEventListener('click', () => addRow());
-          
+
           if (existingLineItems.length > 0) {
             existingLineItems.forEach(item => addRow(item));
           } else {
             addRow();
           }
-  
+
           document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
               e.preventDefault();
+              const submitBtn = e.target.querySelector('[type="submit"]');
+              submitBtn.disabled = true;
+              submitBtn.textContent = 'Saving…';
+
               const formData = new FormData(e.target);
-              
+
               const lineItems = [];
               document.querySelectorAll('#lineItemsTable tbody tr').forEach(tr => {
                   const productId = tr.querySelector('.product-select').value;
@@ -542,7 +509,7 @@ app.get("/:id/edit", async (c) => {
                       unitPrice: Number.parseFloat(tr.querySelector('.price-input').value),
                   });
               });
-  
+
               const data = {
                   customerId: Number(formData.get('customerId')),
                   dueDate: formData.get('dueDate'),
@@ -550,17 +517,19 @@ app.get("/:id/edit", async (c) => {
                   notes: formData.get('notes') || null,
                   lineItems: lineItems
               };
-  
+
               const res = await fetch('/api/invoices/${id}', {
                   method: 'PUT',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(data)
               });
-  
+
               if (res.ok) {
                   window.location.href = '/invoices/${id}';
               } else {
-                  alert('Error updating invoice');
+                  submitBtn.disabled = false;
+                  submitBtn.textContent = 'Save Changes';
+                  alert('Error updating invoice. Please try again.');
               }
           });
         `,
