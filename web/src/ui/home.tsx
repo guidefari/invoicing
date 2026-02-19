@@ -38,9 +38,14 @@ app.get("/", async (c) => {
 
       {/* Stats row */}
       <div class="stat-grid">
-        <div class="stat-card">
-          <div class="stat-card-label">Total Revenue</div>
-          <div class="stat-card-value">{totalRevenue.toFixed(2)}</div>
+        <div class="stat-card stat-card--revenue" id="revenueCard" style="cursor: pointer; user-select: none;" role="button" aria-label="Toggle revenue visibility" tabindex={0}>
+          <div class="stat-card-label" style="display: flex; align-items: center; justify-content: space-between;">
+            Total Revenue
+            <span id="revenueEyeIcon" style="color: var(--text-muted);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </span>
+          </div>
+          <div class="stat-card-value" id="revenueValue">{new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR", minimumFractionDigits: 2 }).format(totalRevenue)}</div>
           <div class="stat-card-sub">across all invoices</div>
         </div>
         <div class="stat-card">
@@ -153,6 +158,46 @@ app.get("/", async (c) => {
           <svg class="quick-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </a>
       </div>
+
+      <script dangerouslySetInnerHTML={{ __html: `
+        const STORAGE_KEY = 'revenue-hidden';
+        const card = document.getElementById('revenueCard');
+        const valueEl = document.getElementById('revenueValue');
+        const eyeIcon = document.getElementById('revenueEyeIcon');
+        const ACTUAL = valueEl.textContent;
+        const HIDDEN = '••••••';
+
+        const EYE_OPEN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+        const EYE_CLOSED = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+        function setHidden(hidden) {
+          if (hidden) {
+            valueEl.textContent = HIDDEN;
+            valueEl.style.letterSpacing = '0.15em';
+            eyeIcon.innerHTML = EYE_CLOSED;
+            localStorage.setItem(STORAGE_KEY, '1');
+          } else {
+            valueEl.textContent = ACTUAL;
+            valueEl.style.letterSpacing = '';
+            eyeIcon.innerHTML = EYE_OPEN;
+            localStorage.setItem(STORAGE_KEY, '0');
+          }
+        }
+
+        const stored = localStorage.getItem(STORAGE_KEY);
+        setHidden(stored !== '0');
+
+        card.addEventListener('click', () => {
+          setHidden(valueEl.textContent === ACTUAL);
+        });
+
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setHidden(valueEl.textContent === ACTUAL);
+          }
+        });
+      ` }} />
     </Layout>
   )
 })
