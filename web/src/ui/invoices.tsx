@@ -1,30 +1,32 @@
 /** @jsx jsx */
 /** @jsxImportSource hono/jsx */
-import { Hono } from "hono"
-import { Layout } from "./Layout.tsx"
-import { Effect } from "effect"
+import { Hono } from "hono";
+import { Layout } from "./Layout.tsx";
+import { Effect } from "effect";
 import {
   InvoiceService,
   CustomerService,
   ProductService,
-  AppRuntime
-} from "@invoicing/core"
+  AppRuntime,
+} from "@invoicing/core";
 
-const app = new Hono()
+const app = new Hono();
 
 app.get("/", async (c) => {
   const invoices = await AppRuntime.runPromise(
     Effect.gen(function* () {
-      const service = yield* InvoiceService
-      return yield* service.list()
-    })
-  )
+      const service = yield* InvoiceService;
+      return yield* service.list();
+    }),
+  );
 
   return c.html(
     <Layout title="Invoices">
       <div class="flex justify-between items-center mb-4">
         <h1>Invoices</h1>
-        <a href="/invoices/new" class="btn btn-primary">New Invoice</a>
+        <a href="/invoices/new" class="btn btn-primary">
+          New Invoice
+        </a>
       </div>
 
       <div class="table-container">
@@ -47,44 +49,64 @@ app.get("/", async (c) => {
                 <td>{invoice.total.toFixed(2)}</td>
                 <td>
                   <div class="flex gap-2">
-                    <a href={`/invoices/${invoice.id}`} class="btn btn-outline text-sm">View</a>
-                    <a href={`/invoices/${invoice.id}/edit`} class="btn btn-outline text-sm">Edit</a>
+                    <a
+                      href={`/invoices/${invoice.id}`}
+                      class="btn btn-outline text-sm"
+                    >
+                      View
+                    </a>
+                    <a
+                      href={`/invoices/${invoice.id}/edit`}
+                      class="btn btn-outline text-sm"
+                    >
+                      Edit
+                    </a>
                   </div>
                 </td>
               </tr>
             ))}
-             {invoices.length === 0 && (
+            {invoices.length === 0 && (
               <tr>
-                <td colspan={5} class="text-secondary" style="text-align: center;">No invoices found.</td>
+                <td
+                  colspan={5}
+                  class="text-secondary"
+                  style="text-align: center;"
+                >
+                  No invoices found.
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
       <div class="mt-4">
-         <a href="/" class="btn btn-link">Back to Dashboard</a>
+        <a href="/" class="btn btn-link">
+          Back to Dashboard
+        </a>
       </div>
-    </Layout>
-  )
-})
+    </Layout>,
+  );
+});
 
 app.get("/new", async (c) => {
   const data = await AppRuntime.runPromise(
     Effect.gen(function* () {
-      const customerService = yield* CustomerService
-      const productService = yield* ProductService
+      const customerService = yield* CustomerService;
+      const productService = yield* ProductService;
       return {
         customers: yield* customerService.list(),
         products: yield* productService.list(),
-      }
-    })
-  )
+      };
+    }),
+  );
 
   return c.html(
     <Layout title="New Invoice">
       <div class="flex justify-between items-center mb-4">
         <h1>New Invoice</h1>
-        <a href="/invoices" class="btn btn-link">Back to List</a>
+        <a href="/invoices" class="btn btn-link">
+          Back to List
+        </a>
       </div>
 
       <div class="card">
@@ -108,10 +130,10 @@ app.get("/new", async (c) => {
             <label for="notes">Notes</label>
             <textarea id="notes" name="notes"></textarea>
           </div>
-            
+
           <div class="form-group">
-             <label for="vatRate">VAT Rate (%) (Optional override)</label>
-             <input type="number" id="vatRate" name="vatRate" step="0.01" />
+            <label for="vatRate">VAT Rate (%) (Optional override)</label>
+            <input type="number" id="vatRate" name="vatRate" step="0.01" />
           </div>
 
           <h3 class="mb-4">Line Items</h3>
@@ -126,20 +148,28 @@ app.get("/new", async (c) => {
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody>
-                {/* Rows added via JS */}
-              </tbody>
+              <tbody>{/* Rows added via JS */}</tbody>
             </table>
           </div>
-          <button type="button" id="addLineItemBtn" class="btn btn-outline mb-4">+ Add Line Item</button>
+          <button
+            type="button"
+            id="addLineItemBtn"
+            class="btn btn-outline mb-4"
+          >
+            + Add Line Item
+          </button>
 
           <div class="mt-4">
-            <button type="submit" class="btn btn-primary">Create Invoice</button>
+            <button type="submit" class="btn btn-primary">
+              Create Invoice
+            </button>
           </div>
         </form>
       </div>
 
-      <script dangerouslySetInnerHTML={{ __html: `
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
         const products = ${JSON.stringify(data.products)};
         
         function addRow() {
@@ -154,7 +184,7 @@ app.get("/new", async (c) => {
           tr.innerHTML = \`
             <td><select class="product-select" style="width: 100%">\${productOptions}</select></td>
             <td><input type="text" class="desc-input" required></td>
-            <td><input type="number" class="qty-input" value="1" min="1" required></td>
+            <td><input type="number" class="qty-input" value="1" step="any" min="0.01" required></td>
             <td><input type="number" class="price-input" step="0.01" required></td>
             <td><button type="button" class="btn btn-danger remove-btn">Remove</button></td>
           \`;
@@ -200,8 +230,8 @@ app.get("/new", async (c) => {
                 lineItems.push({
                     productId: productId ? Number(productId) : null,
                     description: tr.querySelector('.desc-input').value,
-                    quantity: Number(tr.querySelector('.qty-input').value),
-                    unitPrice: Number(tr.querySelector('.price-input').value),
+                    quantity: Number.parseFloat(tr.querySelector('.qty-input').value),
+                    unitPrice: Number.parseFloat(tr.querySelector('.price-input').value),
                 });
             });
 
@@ -225,174 +255,224 @@ app.get("/new", async (c) => {
                 alert('Error creating invoice');
             }
         });
-      ` }} />
-    </Layout>
-  )
-})
+      `,
+        }}
+      />
+    </Layout>,
+  );
+});
 
 app.get("/:id", async (c) => {
-    const id = Number(c.req.param("id"))
-    if (isNaN(id)) return c.text("Invalid ID", 400)
-  
-    const invoice = await AppRuntime.runPromise(
-      Effect.gen(function* () {
-        const service = yield* InvoiceService
-        return yield* service.get(id)
-      })
-    )
-  
-    if (!invoice) return c.text("Invoice not found", 404)
-  
-    return c.html(
-      <Layout title={`Invoice ${invoice.invoiceNumber}`}>
-        <div class="flex justify-between items-center mb-4">
-          <h1>Invoice {invoice.invoiceNumber}</h1>
-          <div class="flex gap-2">
-              <a href={`/invoices/${id}/edit`} class="btn btn-outline">Edit</a>
-              <a href={`/api/invoices/${id}/pdf`} class="btn btn-primary" target="_blank">Download PDF</a>
-              <a href="/invoices" class="btn btn-outline">Back to List</a>
+  const id = Number(c.req.param("id"));
+  if (isNaN(id)) return c.text("Invalid ID", 400);
+
+  const invoice = await AppRuntime.runPromise(
+    Effect.gen(function* () {
+      const service = yield* InvoiceService;
+      return yield* service.get(id);
+    }),
+  );
+
+  if (!invoice) return c.text("Invoice not found", 404);
+
+  return c.html(
+    <Layout title={`Invoice ${invoice.invoiceNumber}`}>
+      <div class="flex justify-between items-center mb-4">
+        <h1>Invoice {invoice.invoiceNumber}</h1>
+        <div class="flex gap-2">
+          <a href={`/invoices/${id}/edit`} class="btn btn-outline">
+            Edit
+          </a>
+          <a
+            href={`/api/invoices/${id}/pdf`}
+            class="btn btn-primary"
+            target="_blank"
+          >
+            Download PDF
+          </a>
+          <a href="/invoices" class="btn btn-outline">
+            Back to List
+          </a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="flex justify-between mb-4">
+          <div>
+            <strong>Date:</strong>{" "}
+            {new Date(invoice.createdAt).toLocaleDateString()}
+            <br />
+            <strong>Due Date:</strong>{" "}
+            {new Date(invoice.dueDate).toLocaleDateString()}
+          </div>
+          <div class="text-right">
+            <strong>Total:</strong> {invoice.total.toFixed(2)}
           </div>
         </div>
-  
-        <div class="card">
-            <div class="flex justify-between mb-4">
-                <div>
-                   <strong>Date:</strong> {new Date(invoice.createdAt).toLocaleDateString()}<br/>
-                   <strong>Due Date:</strong> {new Date(invoice.dueDate).toLocaleDateString()}
-                </div>
-                <div class="text-right">
-                   <strong>Total:</strong> {invoice.total.toFixed(2)}
-                </div>
-            </div>
-            
-            <h3 class="mb-4">Line Items</h3>
-            <div class="table-container mb-6">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Description</th>
-                            <th>Qty</th>
-                            <th>Unit Price</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {invoice.lineItems.map(item => (
-                            <tr>
-                                <td>{item.description}</td>
-                                <td>{item.quantity}</td>
-                                <td>{item.unitPrice.toFixed(2)}</td>
-                                <td>{item.lineTotal.toFixed(2)}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
 
-            <div class="flex justify-end mt-4" style="border-top: 1px solid var(--border-color); padding-top: var(--space-4);">
-                <div style="width: 300px;">
-                    <div class="flex justify-between mb-1">
-                        <span class="text-secondary">Subtotal:</span>
-                        <span>{invoice.subtotal.toFixed(2)}</span>
-                    </div>
-                    <div class="flex justify-between mb-2">
-                        <span class="text-secondary">VAT ({invoice.vatRate}%):</span>
-                        <span>{invoice.vatAmount.toFixed(2)}</span>
-                    </div>
-                    <div class="flex justify-between font-bold text-lg" style="padding-top: var(--space-2); border-top: 1px solid var(--border-color);">
-                         <span>Total:</span>
-                         <span class="text-primary">{invoice.total.toFixed(2)}</span>
-                    </div>
-                </div>
-            </div>
+        <h3 class="mb-4">Line Items</h3>
+        <div class="table-container mb-6">
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoice.lineItems.map((item) => (
+                <tr>
+                  <td>{item.description}</td>
+                  <td>{item.quantity}</td>
+                  <td>{item.unitPrice.toFixed(2)}</td>
+                  <td>{item.lineTotal.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </Layout>
-    )
-  })
+
+        <div
+          class="flex justify-end mt-4"
+          style="border-top: 1px solid var(--border-color); padding-top: var(--space-4);"
+        >
+          <div style="width: 300px;">
+            <div class="flex justify-between mb-1">
+              <span class="text-secondary">Subtotal:</span>
+              <span>{invoice.subtotal.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between mb-2">
+              <span class="text-secondary">VAT ({invoice.vatRate}%):</span>
+              <span>{invoice.vatAmount.toFixed(2)}</span>
+            </div>
+            <div
+              class="flex justify-between font-bold text-lg"
+              style="padding-top: var(--space-2); border-top: 1px solid var(--border-color);"
+            >
+              <span>Total:</span>
+              <span class="text-primary">{invoice.total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Layout>,
+  );
+});
 
 app.get("/:id/edit", async (c) => {
-    const id = Number(c.req.param("id"))
-    if (isNaN(id)) return c.text("Invalid ID", 400)
-  
-    const data = await AppRuntime.runPromise(
-      Effect.gen(function* () {
-        const invoiceService = yield* InvoiceService
-        const customerService = yield* CustomerService
-        const productService = yield* ProductService
-        
-        const invoice = yield* invoiceService.get(id)
-        if (!invoice) return undefined
-  
-        return {
-          invoice,
-          customers: yield* customerService.list(),
-          products: yield* productService.list(),
-        }
-      })
-    )
-  
-    if (!data) return c.text("Invoice not found", 404)
-  
-    return c.html(
-      <Layout title={`Edit Invoice ${data.invoice.invoiceNumber}`}>
-        <div class="flex justify-between items-center mb-4">
-          <h1>Edit Invoice {data.invoice.invoiceNumber}</h1>
-          <a href="/invoices" class="btn btn-outline">Back to List</a>
-        </div>
-  
-        <div class="card">
-          <form id="invoiceForm">
-            <div class="form-group">
-              <label for="customerId">Customer</label>
-              <select id="customerId" name="customerId" required>
-                <option value="">Select Customer</option>
-                {data.customers.map((cust) => (
-                  <option value={cust.id} selected={cust.id === data.invoice.customerId}>{cust.name}</option>
-                ))}
-              </select>
-            </div>
-  
-            <div class="form-group">
-              <label for="dueDate">Due Date</label>
-              <input type="date" id="dueDate" name="dueDate" value={data.invoice.dueDate} required />
-            </div>
-  
-            <div class="form-group">
-              <label for="notes">Notes</label>
-              <textarea id="notes" name="notes">{data.invoice.notes}</textarea>
-            </div>
-              
-            <div class="form-group">
-               <label for="vatRate">VAT Rate (%) (Optional override)</label>
-               <input type="number" id="vatRate" name="vatRate" value={data.invoice.vatRate ?? ""} step="0.01" />
-            </div>
-  
-            <h3 class="mb-4">Line Items</h3>
-            <div class="table-container mb-4">
-              <table id="lineItemsTable">
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Description</th>
-                    <th>Quantity</th>
-                    <th>Unit Price</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Rows added via JS */}
-                </tbody>
-              </table>
-            </div>
-            <button type="button" id="addLineItemBtn" class="btn btn-outline mb-4">+ Add Line Item</button>
-  
-            <div class="mt-4">
-              <button type="submit" class="btn btn-primary">Update Invoice</button>
-            </div>
-          </form>
-        </div>
-  
-        <script dangerouslySetInnerHTML={{ __html: `
+  const id = Number(c.req.param("id"));
+  if (isNaN(id)) return c.text("Invalid ID", 400);
+
+  const data = await AppRuntime.runPromise(
+    Effect.gen(function* () {
+      const invoiceService = yield* InvoiceService;
+      const customerService = yield* CustomerService;
+      const productService = yield* ProductService;
+
+      const invoice = yield* invoiceService.get(id);
+      if (!invoice) return undefined;
+
+      return {
+        invoice,
+        customers: yield* customerService.list(),
+        products: yield* productService.list(),
+      };
+    }),
+  );
+
+  if (!data) return c.text("Invoice not found", 404);
+
+  return c.html(
+    <Layout title={`Edit Invoice ${data.invoice.invoiceNumber}`}>
+      <div class="flex justify-between items-center mb-4">
+        <h1>Edit Invoice {data.invoice.invoiceNumber}</h1>
+        <a href="/invoices" class="btn btn-outline">
+          Back to List
+        </a>
+      </div>
+
+      <div class="card">
+        <form id="invoiceForm">
+          <div class="form-group">
+            <label for="customerId">Customer</label>
+            <select id="customerId" name="customerId" required>
+              <option value="">Select Customer</option>
+              {data.customers.map((cust) => (
+                <option
+                  value={cust.id}
+                  selected={cust.id === data.invoice.customerId}
+                >
+                  {cust.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="dueDate">Due Date</label>
+            <input
+              type="date"
+              id="dueDate"
+              name="dueDate"
+              value={data.invoice.dueDate}
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes">
+              {data.invoice.notes}
+            </textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="vatRate">VAT Rate (%) (Optional override)</label>
+            <input
+              type="number"
+              id="vatRate"
+              name="vatRate"
+              value={data.invoice.vatRate ?? ""}
+              step="0.01"
+            />
+          </div>
+
+          <h3 class="mb-4">Line Items</h3>
+          <div class="table-container mb-4">
+            <table id="lineItemsTable">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Description</th>
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>{/* Rows added via JS */}</tbody>
+            </table>
+          </div>
+          <button
+            type="button"
+            id="addLineItemBtn"
+            class="btn btn-outline mb-4"
+          >
+            + Add Line Item
+          </button>
+
+          <div class="mt-4">
+            <button type="submit" class="btn btn-primary">
+              Update Invoice
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
           const products = ${JSON.stringify(data.products)};
           const existingLineItems = ${JSON.stringify(data.invoice.lineItems)};
           
@@ -409,7 +489,7 @@ app.get("/:id/edit", async (c) => {
             tr.innerHTML = \`
               <td><select class="product-select" style="width: 100%">\${productOptions}</select></td>
               <td><input type="text" class="desc-input" value="\${item ? item.description : ''}" required></td>
-              <td><input type="number" class="qty-input" value="\${item ? item.quantity : 1}" min="1" required></td>
+              <td><input type="number" class="qty-input" value="\${item ? item.quantity : 1}" step="any" min="0.01" required></td>
               <td><input type="number" class="price-input" value="\${item ? item.unitPrice : ''}" step="0.01" required></td>
               <td><button type="button" class="btn btn-danger remove-btn">Remove</button></td>
             \`;
@@ -458,8 +538,8 @@ app.get("/:id/edit", async (c) => {
                   lineItems.push({
                       productId: productId ? Number(productId) : null,
                       description: tr.querySelector('.desc-input').value,
-                      quantity: Number(tr.querySelector('.qty-input').value),
-                      unitPrice: Number(tr.querySelector('.price-input').value),
+                      quantity: Number.parseFloat(tr.querySelector('.qty-input').value),
+                      unitPrice: Number.parseFloat(tr.querySelector('.price-input').value),
                   });
               });
   
@@ -483,10 +563,11 @@ app.get("/:id/edit", async (c) => {
                   alert('Error updating invoice');
               }
           });
-        ` }} />
-      </Layout>
-    )
-  })
+        `,
+        }}
+      />
+    </Layout>,
+  );
+});
 
-export default app
-
+export default app;
