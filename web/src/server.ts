@@ -2,6 +2,7 @@ import { Hono } from "hono"
 import { cors } from "hono/cors"
 import { serveStatic } from "hono/bun"
 import businessInfo from "./routes/business-info.ts"
+import bankAccounts from "./routes/bank-accounts.ts"
 import customers from "./routes/customers.ts"
 import products from "./routes/products.ts"
 import invoices from "./routes/invoices.ts"
@@ -15,6 +16,7 @@ app.use("/*", cors())
 
 const routes = app
   .route("/api/business-info", businessInfo)
+  .route("/api/bank-accounts", bankAccounts)
   .route("/api/customers", customers)
   .route("/api/products", products)
   .route("/api/invoices", invoices)
@@ -38,9 +40,11 @@ import businessInfoUI from "./ui/business-info.tsx"
 import customersUI from "./ui/customers.tsx"
 import productsUI from "./ui/products.tsx"
 import invoicesUI from "./ui/invoices.tsx"
+import bankAccountsUI from "./ui/bank-accounts.tsx"
 
 app.route("/", home)
 app.route("/business-info", businessInfoUI)
+app.route("/bank-accounts", bankAccountsUI)
 app.route("/customers", customersUI)
 app.route("/products", productsUI)
 app.route("/invoices", invoicesUI)

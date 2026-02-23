@@ -1,5 +1,22 @@
 import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core"
 
+export const bankAccounts = sqliteTable("bank_accounts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  label: text("label").notNull(),
+  currency: text("currency").notNull().default("ZAR"),
+  accountHolderName: text("account_holder_name").notNull(),
+  bankName: text("bank_name").notNull(),
+  accountNumber: text("account_number"),
+  branchCode: text("branch_code"),
+  iban: text("iban"),
+  swiftBic: text("swift_bic"),
+  bankAddress: text("bank_address"),
+  isDefault: integer("is_default", { mode: "boolean" }).notNull().default(false),
+  createdAt: text("created_at")
+    .notNull()
+    .$defaultFn(() => new Date().toISOString()),
+})
+
 export const businessInfo = sqliteTable("business_info", {
   id: integer("id").primaryKey().$default(() => 1),
   companyName: text("company_name").notNull(),
@@ -51,6 +68,9 @@ export const invoices = sqliteTable(
     customerId: integer("customer_id")
       .notNull()
       .references(() => customers.id),
+    bankAccountId: integer("bank_account_id")
+      .references(() => bankAccounts.id),
+    currency: text("currency").notNull().default("ZAR"),
     createdAt: text("created_at")
       .notNull()
       .$defaultFn(() => new Date().toISOString()),

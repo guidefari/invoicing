@@ -1,17 +1,26 @@
-import type { Invoice, InvoiceLineItem, Customer, BusinessInfo } from "../types/index.ts"
+import type { Invoice, InvoiceLineItem, Customer, BusinessInfo, BankAccount } from "../types/index.ts"
 
 export interface InvoiceTemplateData {
   invoice: Invoice
   lineItems: InvoiceLineItem[]
   customer: Customer
   businessInfo: BusinessInfo
+  bankAccount?: BankAccount | undefined
   logoDataUrl?: string | undefined
 }
 
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat("en-ZA", {
+const CURRENCY_LOCALES: Record<string, string> = {
+  ZAR: "en-ZA",
+  USD: "en-US",
+  EUR: "de-DE",
+  GBP: "en-GB",
+}
+
+export const formatCurrency = (amount: number, currency = "ZAR"): string => {
+  const locale = CURRENCY_LOCALES[currency] ?? "en-US"
+  return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency: "ZAR",
+    currency,
   }).format(amount)
 }
 
@@ -24,7 +33,9 @@ export const formatDate = (dateString: string): string => {
 }
 
 export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
-  const { invoice, lineItems, customer, businessInfo } = data
+  const { invoice, lineItems, customer, businessInfo, bankAccount } = data
+  const cur = invoice.currency ?? "ZAR"
+  const fmt = (amount: number) => formatCurrency(amount, cur)
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -88,8 +99,8 @@ export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
         <h1>INVOICE</h1>
       </div>
       <div class="header-right">
-        <div class="label">Amount Due (ZAR)</div>
-        <div class="amount">${formatCurrency(invoice.total)}</div>
+        <div class="label">Amount Due (${cur})</div>
+        <div class="amount">${fmt(invoice.total)}</div>
       </div>
     </div>
 
@@ -110,7 +121,7 @@ export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
           <div class="detail-line"><span class="detail-label">Invoice Number:</span> ${invoice.invoiceNumber}</div>
           <div class="detail-line"><span class="detail-label">Invoice Date:</span> ${formatDate(invoice.createdAt)}</div>
           <div class="detail-line"><span class="detail-label">Payment Due:</span> ${formatDate(invoice.dueDate)}</div>
-          <div class="detail-line"><span class="detail-label">Amount Due (ZAR):</span> ${formatCurrency(invoice.total)}</div>
+          <div class="detail-line"><span class="detail-label">Amount Due (${cur}):</span> ${fmt(invoice.total)}</div>
         </div>
       </div>
 
@@ -134,8 +145,8 @@ export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
                 ${item.additionalNotes ? `<div class="item-notes">${item.additionalNotes}</div>` : ""}
               </td>
               <td class="right">${item.quantity}</td>
-              <td class="right">${formatCurrency(item.unitPrice)}</td>
-              <td class="right">${formatCurrency(item.lineTotal)}</td>
+              <td class="right">${fmt(item.unitPrice)}</td>
+              <td class="right">${fmt(item.lineTotal)}</td>
             </tr>
           `
             )
@@ -147,20 +158,20 @@ export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
       <div class="totals">
         <div class="total-line">
           <span class="total-label">Subtotal:</span>
-          <span class="total-amount">${formatCurrency(invoice.subtotal)}</span>
+          <span class="total-amount">${fmt(invoice.subtotal)}</span>
         </div>
         ${
           invoice.vatAmount > 0
             ? `
         <div class="total-line">
           <span class="total-label">VAT (${invoice.vatRate}%):</span>
-          <span class="total-amount">${formatCurrency(invoice.vatAmount)}</span>
+          <span class="total-amount">${fmt(invoice.vatAmount)}</span>
         </div>`
             : ""
         }
         <div class="total-line final">
-          <span class="total-label">Amount Due (ZAR):</span>
-          <span class="total-amount">${formatCurrency(invoice.total)}</span>
+          <span class="total-label">Amount Due (${cur}):</span>
+          <span class="total-amount">${fmt(invoice.total)}</span>
         </div>
       </div>
     </div>
@@ -183,6 +194,42 @@ export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
         </div>
       </div>
       <div class="footer-bank">
+        ${bankAccount ? (
+          bankAccount.iban
+            ? `
+        <span class="bank-details">
+          <span class="label">Bank:</span> ${bankAccount.bankName}
+        </span>
+        <span class="bank-details">
+          <span class="label">IBAN:</span> ${bankAccount.iban}
+        </span>
+        ${bankAccount.swiftBic ? `
+        <span class="bank-details">
+          <span class="label">SWIFT/BIC:</span> ${bankAccount.swiftBic}
+        </span>` : ""}
+        <span class="bank-details">
+          <span class="label">Account Holder:</span> ${bankAccount.accountHolderName}
+        </span>
+        ${bankAccount.bankAddress ? `
+        <span class="bank-details">
+          <span class="label">Bank Address:</span> ${bankAccount.bankAddress}
+        </span>` : ""}
+        `
+            : `
+        <span class="bank-details">
+          <span class="label">Bank:</span> ${bankAccount.bankName}
+        </span>
+        <span class="bank-details">
+          <span class="label">Account:</span> ${bankAccount.accountNumber}
+        </span>
+        <span class="bank-details">
+          <span class="label">Branch Code:</span> ${bankAccount.branchCode}
+        </span>
+        <span class="bank-details">
+          <span class="label">Account Holder:</span> ${bankAccount.accountHolderName}
+        </span>
+        `
+        ) : `
         <span class="bank-details">
           <span class="label">Bank:</span> ${businessInfo.bankName}
         </span>
@@ -192,6 +239,7 @@ export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
         <span class="bank-details">
           <span class="label">Branch Code:</span> ${businessInfo.branchCode}
         </span>
+        `}
       </div>
     </div>
   </div>

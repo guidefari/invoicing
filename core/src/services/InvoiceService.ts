@@ -3,6 +3,7 @@ import { eq, desc, sql, like } from "drizzle-orm"
 import { Database, DatabaseError } from "./Database.ts"
 import { ProductService } from "./ProductService.ts"
 import { BusinessInfoService } from "./BusinessInfoService.ts"
+import { BankAccountService } from "./BankAccountService.ts"
 import { invoices, invoiceLineItems } from "../db/drizzle-schema.ts"
 import type { Invoice, InvoiceLineItem, CreateInvoiceInput, UpdateInvoiceInput, CreateLineItemInput } from "../types/index.ts"
 
@@ -27,6 +28,7 @@ export const InvoiceServiceLive = Layer.effect(
     const database = yield* Database
     const productService = yield* ProductService
     const businessInfoService = yield* BusinessInfoService
+    const bankAccountService = yield* BankAccountService
 
     const getNextInvoiceNumber = () =>
       Effect.gen(function* () {
@@ -84,6 +86,22 @@ export const InvoiceServiceLive = Layer.effect(
       create: (input: CreateInvoiceInput) =>
         Effect.gen(function* () {
           const invoiceNumber = yield* getNextInvoiceNumber()
+
+          // Resolve bank account
+          let bankAccountId: number | null = input.bankAccountId ?? null
+          let currency = "ZAR"
+          if (bankAccountId) {
+            const bankAccount = yield* bankAccountService.get(bankAccountId)
+            if (bankAccount) {
+              currency = bankAccount.currency
+            }
+          } else {
+            const defaultAccount = yield* bankAccountService.getDefault()
+            if (defaultAccount) {
+              bankAccountId = defaultAccount.id
+              currency = defaultAccount.currency
+            }
+          }
 
           const enrichedLineItems = yield* Effect.all(
             input.lineItems.map((item) =>
@@ -146,6 +164,8 @@ export const InvoiceServiceLive = Layer.effect(
                 .values({
                   invoiceNumber,
                   customerId: input.customerId,
+                  bankAccountId,
+                  currency,
                   dueDate: input.dueDate,
                   vatRate: effectiveVatRate,
                   notes: input.notes,
@@ -209,6 +229,22 @@ export const InvoiceServiceLive = Layer.effect(
 
       update: (id: number, input: UpdateInvoiceInput) =>
         Effect.gen(function* () {
+          // Resolve bank account
+          let bankAccountId: number | null = input.bankAccountId ?? null
+          let currency = "ZAR"
+          if (bankAccountId) {
+            const bankAccount = yield* bankAccountService.get(bankAccountId)
+            if (bankAccount) {
+              currency = bankAccount.currency
+            }
+          } else {
+            const defaultAccount = yield* bankAccountService.getDefault()
+            if (defaultAccount) {
+              bankAccountId = defaultAccount.id
+              currency = defaultAccount.currency
+            }
+          }
+
           const enrichedLineItems = yield* Effect.all(
             input.lineItems.map((item: CreateLineItemInput) =>
               Effect.gen(function* () {
@@ -269,6 +305,8 @@ export const InvoiceServiceLive = Layer.effect(
                 .update(invoices)
                 .set({
                   customerId: input.customerId,
+                  bankAccountId,
+                  currency,
                   dueDate: input.dueDate,
                   vatRate: effectiveVatRate,
                   notes: input.notes,

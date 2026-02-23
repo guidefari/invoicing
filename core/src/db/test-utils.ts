@@ -8,6 +8,23 @@ const createTestDatabase = (): SQLiteDatabase => {
   const sqlite = new SQLiteDatabase(":memory:")
 
   sqlite.run(`
+    CREATE TABLE IF NOT EXISTS bank_accounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      label TEXT NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'ZAR',
+      account_holder_name TEXT NOT NULL,
+      bank_name TEXT NOT NULL,
+      account_number TEXT,
+      branch_code TEXT,
+      iban TEXT,
+      swift_bic TEXT,
+      bank_address TEXT,
+      is_default INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `)
+
+  sqlite.run(`
     CREATE TABLE IF NOT EXISTS business_info (
       id INTEGER PRIMARY KEY CHECK (id = 1),
       company_name TEXT NOT NULL,
@@ -57,6 +74,8 @@ const createTestDatabase = (): SQLiteDatabase => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       invoice_number TEXT NOT NULL UNIQUE,
       customer_id INTEGER NOT NULL,
+      bank_account_id INTEGER,
+      currency TEXT NOT NULL DEFAULT 'ZAR',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       due_date TEXT NOT NULL,
       vat_rate REAL,

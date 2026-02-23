@@ -2,6 +2,7 @@ import { describe, test, expect } from "bun:test"
 import { Effect, Layer } from "effect"
 import { InvoiceService, InvoiceServiceLive } from "./InvoiceService.ts"
 import { BusinessInfoService, BusinessInfoServiceLive } from "./BusinessInfoService.ts"
+import { BankAccountService, BankAccountServiceLive } from "./BankAccountService.ts"
 import { CustomerService, CustomerServiceLive } from "./CustomerService.ts"
 import { ProductService, ProductServiceLive } from "./ProductService.ts"
 import { TestDatabaseLive } from "../db/test-utils.ts"
@@ -11,11 +12,12 @@ const TestLayer = InvoiceServiceLive.pipe(
   Layer.provideMerge(ProductServiceLive),
   Layer.provideMerge(CustomerServiceLive),
   Layer.provideMerge(BusinessInfoServiceLive),
+  Layer.provideMerge(BankAccountServiceLive),
   Layer.provide(TestDatabaseLive)
 )
 
 const runTest = <A, E>(
-  effect: Effect.Effect<A, E, CustomerService | InvoiceService | ProductService | BusinessInfoService>
+  effect: Effect.Effect<A, E, CustomerService | InvoiceService | ProductService | BusinessInfoService | BankAccountService>
 ) => Effect.runPromise(Effect.provide(effect, TestLayer))
 
 describe("InvoiceService", () => {
@@ -372,6 +374,115 @@ describe("InvoiceService", () => {
     expect(result.total).toBe(1150)
   })
   
+  test("should use default bank account and its currency", async () => {
+    const result = await runTest(
+      Effect.gen(function* () {
+        const customerService = yield* CustomerService
+        const bankAccountService = yield* BankAccountService
+        const invoiceService = yield* InvoiceService
+
+        yield* bankAccountService.create({
+          label: "USD Account",
+          currency: "USD",
+          accountHolderName: "Test Corp",
+          bankName: "Wise",
+          accountNumber: "87654321",
+          branchCode: "000000",
+        })
+
+        const customer = yield* customerService.create({
+          name: "Currency Test Customer",
+          vatNumber: "VATCUR",
+          streetAddress: "Currency St",
+          city: "Currency City",
+          postalCode: "5555",
+          country: "South Africa",
+          email: "currency@test.com",
+          phone: "5555555555",
+        })
+
+        return yield* invoiceService.create({
+          customerId: customer.id,
+          dueDate: "2025-12-31",
+          vatRate: 0,
+          notes: null,
+          lineItems: [
+            {
+              productId: null,
+              description: "USD Service",
+              quantity: 1,
+              unitPrice: 500,
+            },
+          ],
+        })
+      })
+    )
+
+    expect(result.currency).toBe("USD")
+    expect(result.bankAccountId).toBeGreaterThan(0)
+  })
+
+  test("should use specified bank account", async () => {
+    const result = await runTest(
+      Effect.gen(function* () {
+        const customerService = yield* CustomerService
+        const bankAccountService = yield* BankAccountService
+        const invoiceService = yield* InvoiceService
+
+        yield* bankAccountService.create({
+          label: "ZAR Account",
+          currency: "ZAR",
+          accountHolderName: "Test Corp",
+          bankName: "FNB",
+          accountNumber: "12345678",
+          branchCode: "250655",
+        })
+
+        const eurAccount = yield* bankAccountService.create({
+          label: "EUR Account",
+          currency: "EUR",
+          accountHolderName: "Test Corp EU",
+          bankName: "Revolut",
+          accountNumber: "EU123456",
+          branchCode: "REV001",
+        })
+
+        const customer = yield* customerService.create({
+          name: "EUR Customer",
+          vatNumber: "VATEUR",
+          streetAddress: "EU St",
+          city: "Berlin",
+          postalCode: "10115",
+          country: "Germany",
+          email: "eu@test.com",
+          phone: "+49123456789",
+        })
+
+        return yield* invoiceService.create({
+          customerId: customer.id,
+          bankAccountId: eurAccount.id,
+          dueDate: "2025-12-31",
+          vatRate: 19,
+          notes: null,
+          lineItems: [
+            {
+              productId: null,
+              description: "EU Consulting",
+              quantity: 10,
+              unitPrice: 100,
+            },
+          ],
+        })
+      })
+    )
+
+    expect(result.currency).toBe("EUR")
+    expect(result.bankAccountId).toBeGreaterThan(0)
+    expect(result.subtotal).toBe(1000)
+    expect(result.vatAmount).toBe(190)
+    expect(result.total).toBe(1190)
+  })
+
   test("should update an existing invoice", async () => {
     const result = await runTest(
       Effect.gen(function* () {

@@ -7,6 +7,7 @@ import {
   InvoiceService,
   CustomerService,
   ProductService,
+  BankAccountService,
   AppRuntime,
 } from "@invoicing/core";
 
@@ -37,6 +38,7 @@ app.get("/", async (c) => {
               <th>Invoice #</th>
               <th>Date</th>
               <th>Due Date</th>
+              <th>Currency</th>
               <th class="text-right">Total</th>
               <th class="text-right">Actions</th>
             </tr>
@@ -51,6 +53,7 @@ app.get("/", async (c) => {
                 </td>
                 <td class="text-secondary">{new Date(invoice.createdAt).toLocaleDateString()}</td>
                 <td class="text-secondary">{new Date(invoice.dueDate).toLocaleDateString()}</td>
+                <td><span class="badge">{invoice.currency ?? "ZAR"}</span></td>
                 <td class="text-right font-semibold">{invoice.total.toFixed(2)}</td>
                 <td class="text-right td-actions">
                   <div class="flex gap-2 justify-end">
@@ -62,7 +65,7 @@ app.get("/", async (c) => {
             ))}
             {invoices.length === 0 && (
               <tr>
-                <td colspan={5}>
+                <td colspan={6}>
                   <div class="empty-state">
                     <p>No invoices yet. Create your first invoice to get started.</p>
                     <a href="/invoices/new" class="btn btn-primary btn-sm">Create Invoice</a>
@@ -82,9 +85,11 @@ app.get("/new", async (c) => {
     Effect.gen(function* () {
       const customerService = yield* CustomerService;
       const productService = yield* ProductService;
+      const bankAccountService = yield* BankAccountService;
       return {
         customers: yield* customerService.list(),
         products: yield* productService.list(),
+        bankAccounts: yield* bankAccountService.list(),
       };
     }),
   );
@@ -114,6 +119,16 @@ app.get("/new", async (c) => {
               <div class="form-group">
                 <label for="dueDate">Due Date <span class="required">*</span></label>
                 <input type="date" id="dueDate" name="dueDate" required />
+              </div>
+
+              <div class="form-group">
+                <label for="bankAccountId">Bank Account</label>
+                <select id="bankAccountId" name="bankAccountId">
+                  <option value="">Use default</option>
+                  {data.bankAccounts.map((ba) => (
+                    <option value={ba.id}>{ba.label} ({ba.currency}){ba.isDefault ? " ★" : ""}</option>
+                  ))}
+                </select>
               </div>
 
               <div class="form-group">
@@ -231,8 +246,10 @@ app.get("/new", async (c) => {
                 });
             });
 
+            const bankAccountId = formData.get('bankAccountId');
             const data = {
                 customerId: Number(formData.get('customerId')),
+                bankAccountId: bankAccountId ? Number(bankAccountId) : null,
                 dueDate: formData.get('dueDate'),
                 vatRate: formData.get('vatRate') ? Number(formData.get('vatRate')) : null,
                 notes: formData.get('notes') || null,
@@ -279,7 +296,8 @@ app.get("/:id", async (c) => {
         <div>
           <h1 style="margin-bottom: 0.25rem;">Invoice {invoice.invoiceNumber}</h1>
           <p style="margin: 0; font-size: 0.875rem;">
-            Issued {new Date(invoice.createdAt).toLocaleDateString("en-ZA", { year: "numeric", month: "long", day: "numeric" })}
+            <span class="badge">{invoice.currency ?? "ZAR"}</span>
+            {" · "}Issued {new Date(invoice.createdAt).toLocaleDateString("en-ZA", { year: "numeric", month: "long", day: "numeric" })}
             {" · "}Due {new Date(invoice.dueDate).toLocaleDateString("en-ZA", { year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
@@ -345,6 +363,7 @@ app.get("/:id/edit", async (c) => {
       const invoiceService = yield* InvoiceService;
       const customerService = yield* CustomerService;
       const productService = yield* ProductService;
+      const bankAccountService = yield* BankAccountService;
 
       const invoice = yield* invoiceService.get(id);
       if (!invoice) return undefined;
@@ -353,6 +372,7 @@ app.get("/:id/edit", async (c) => {
         invoice,
         customers: yield* customerService.list(),
         products: yield* productService.list(),
+        bankAccounts: yield* bankAccountService.list(),
       };
     }),
   );
@@ -386,6 +406,16 @@ app.get("/:id/edit", async (c) => {
               <div class="form-group">
                 <label for="dueDate">Due Date <span class="required">*</span></label>
                 <input type="date" id="dueDate" name="dueDate" value={data.invoice.dueDate} required />
+              </div>
+
+              <div class="form-group">
+                <label for="bankAccountId">Bank Account</label>
+                <select id="bankAccountId" name="bankAccountId">
+                  <option value="">Use default</option>
+                  {data.bankAccounts.map((ba) => (
+                    <option value={ba.id} selected={ba.id === data.invoice.bankAccountId}>{ba.label} ({ba.currency}){ba.isDefault ? " ★" : ""}</option>
+                  ))}
+                </select>
               </div>
 
               <div class="form-group">
@@ -510,8 +540,10 @@ app.get("/:id/edit", async (c) => {
                   });
               });
 
+              const bankAccountId = formData.get('bankAccountId');
               const data = {
                   customerId: Number(formData.get('customerId')),
+                  bankAccountId: bankAccountId ? Number(bankAccountId) : null,
                   dueDate: formData.get('dueDate'),
                   vatRate: formData.get('vatRate') ? Number(formData.get('vatRate')) : null,
                   notes: formData.get('notes') || null,

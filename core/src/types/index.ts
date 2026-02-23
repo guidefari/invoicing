@@ -58,6 +58,8 @@ export interface Invoice {
   id: number
   invoiceNumber: string
   customerId: number
+  bankAccountId: number | null
+  currency: string
   createdAt: string
   dueDate: string
   vatRate: number | null
@@ -78,12 +80,42 @@ export interface InvoiceLineItem {
   additionalNotes: string | null
 }
 
+export interface BankAccount {
+  id: number
+  label: string
+  currency: string
+  accountHolderName: string
+  bankName: string
+  accountNumber: string | null
+  branchCode: string | null
+  iban: string | null
+  swiftBic: string | null
+  bankAddress: string | null
+  isDefault: boolean
+  createdAt: string
+}
+
+export interface CreateBankAccountInput {
+  label: string
+  currency: string
+  accountHolderName: string
+  bankName: string
+  accountNumber?: string | null
+  branchCode?: string | null
+  iban?: string | null
+  swiftBic?: string | null
+  bankAddress?: string | null
+  isDefault?: boolean
+}
+
 export interface BankDetails {
   accountHolderName: string
   bankName: string
-  accountNumber: string
-  branchCode: string
+  accountNumber: string | null
+  branchCode: string | null
   iban: string | null
+  swiftBic: string | null
+  bankAddress: string | null
 }
 
 export interface CreateCustomerInput {
@@ -105,6 +137,7 @@ export interface CreateProductInput {
 
 export interface CreateInvoiceInput {
   customerId: number
+  bankAccountId?: number | null
   dueDate: string
   vatRate: number | null
   notes: string | null

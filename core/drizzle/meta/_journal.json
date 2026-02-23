@@ -15,6 +15,20 @@
       "when": 1765878151044,
       "tag": "0001_low_tenebrous",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1771794749440,
+      "tag": "0002_curly_colleen_wing",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1771796247101,
+      "tag": "0003_wooden_nico_minoru",
+      "breakpoints": true
     }
   ]
 }

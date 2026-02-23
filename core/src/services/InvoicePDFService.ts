@@ -2,6 +2,7 @@ import { Context, Effect, Layer } from "effect"
 import { InvoiceService } from "./InvoiceService.ts"
 import { CustomerService } from "./CustomerService.ts"
 import { BusinessInfoService } from "./BusinessInfoService.ts"
+import { BankAccountService } from "./BankAccountService.ts"
 import { PDFService, PDFError } from "./PDFService.ts"
 import { DatabaseError } from "./Database.ts"
 import { generateInvoiceHTML } from "../templates/invoice-template.ts"
@@ -31,6 +32,7 @@ export const InvoicePDFServiceLive = Layer.effect(
     const invoiceService = yield* InvoiceService
     const customerService = yield* CustomerService
     const businessInfoService = yield* BusinessInfoService
+    const bankAccountService = yield* BankAccountService
     const pdfService = yield* PDFService
 
     return {
@@ -57,6 +59,11 @@ export const InvoicePDFServiceLive = Layer.effect(
             )
           }
 
+          // Fetch bank account if linked
+          const bankAccount = invoiceWithLineItems.bankAccountId
+            ? yield* bankAccountService.get(invoiceWithLineItems.bankAccountId)
+            : undefined
+
           let logoDataUrl: string | undefined
 
           if (businessInfo.logoPath) {
@@ -78,6 +85,7 @@ export const InvoicePDFServiceLive = Layer.effect(
             lineItems: invoiceWithLineItems.lineItems,
             customer,
             businessInfo,
+            bankAccount: bankAccount ?? undefined,
             logoDataUrl,
           })
 
