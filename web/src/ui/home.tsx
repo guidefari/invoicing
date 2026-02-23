@@ -21,7 +21,10 @@ app.get("/", async (c) => {
     })
   )
 
-  const totalRevenue = data.invoices.reduce((sum, inv) => sum + inv.total, 0)
+  const revenueByCurrency = data.invoices.reduce<Record<string, number>>((acc, inv) => {
+    acc[inv.currency] = (acc[inv.currency] ?? 0) + inv.total
+    return acc
+  }, {})
   const recentInvoices = [...data.invoices]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5)
@@ -45,8 +48,10 @@ app.get("/", async (c) => {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </span>
           </div>
-          <div class="stat-card-value" id="revenueValue">{new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR", minimumFractionDigits: 2 }).format(totalRevenue)}</div>
-          <div class="stat-card-sub">across all invoices</div>
+          <div class="stat-card-value" id="revenueValue">{Object.entries(revenueByCurrency).map(([currency, total]) =>
+            new Intl.NumberFormat("en-ZA", { style: "currency", currency, minimumFractionDigits: 2 }).format(total)
+          ).join(" · ") || new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR", minimumFractionDigits: 2 }).format(0)}</div>
+          <div class="stat-card-sub">{Object.keys(revenueByCurrency).length > 1 ? `across ${Object.keys(revenueByCurrency).length} currencies` : "across all invoices"}</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-label">Invoices</div>
@@ -94,7 +99,7 @@ app.get("/", async (c) => {
                     </td>
                     <td class="text-secondary">{new Date(invoice.createdAt).toLocaleDateString()}</td>
                     <td class="text-secondary">{new Date(invoice.dueDate).toLocaleDateString()}</td>
-                    <td class="text-right font-semibold">{invoice.total.toFixed(2)}</td>
+                    <td class="text-right font-semibold">{new Intl.NumberFormat("en-ZA", { style: "currency", currency: invoice.currency, minimumFractionDigits: 2 }).format(invoice.total)}</td>
                     <td class="text-right td-actions">
                       <a href={`/invoices/${invoice.id}`} class="btn btn-sm btn-ghost">View</a>
                     </td>
