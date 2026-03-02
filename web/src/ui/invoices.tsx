@@ -9,7 +9,13 @@ import {
   ProductService,
   BankAccountService,
   AppRuntime,
+  type InvoiceStatus,
 } from "@invoicing/core";
+
+function StatusBadge({ status }: { status: InvoiceStatus }) {
+  const label = status.charAt(0).toUpperCase() + status.slice(1);
+  return <span class={`badge badge-${status}`}>{label}</span>;
+}
 
 const app = new Hono();
 
@@ -36,6 +42,7 @@ app.get("/", async (c) => {
           <thead>
             <tr>
               <th>Invoice #</th>
+              <th>Status</th>
               <th>Date</th>
               <th>Due Date</th>
               <th>Currency</th>
@@ -51,6 +58,7 @@ app.get("/", async (c) => {
                     {invoice.invoiceNumber}
                   </a>
                 </td>
+                <td><StatusBadge status={(invoice.status ?? "draft") as InvoiceStatus} /></td>
                 <td class="text-secondary">{new Date(invoice.createdAt).toLocaleDateString()}</td>
                 <td class="text-secondary">{new Date(invoice.dueDate).toLocaleDateString()}</td>
                 <td><span class="badge">{invoice.currency ?? "ZAR"}</span></td>
@@ -65,7 +73,7 @@ app.get("/", async (c) => {
             ))}
             {invoices.length === 0 && (
               <tr>
-                <td colspan={6}>
+                <td colspan={7}>
                   <div class="empty-state">
                     <p>No invoices yet. Create your first invoice to get started.</p>
                     <a href="/invoices/new" class="btn btn-primary btn-sm">Create Invoice</a>
@@ -290,24 +298,54 @@ app.get("/:id", async (c) => {
 
   if (!invoice) return c.text("Invoice not found", 404);
 
+  const invoiceStatus = (invoice.status ?? "draft") as InvoiceStatus
+
   return c.html(
     <Layout title={`Invoice ${invoice.invoiceNumber}`} currentPath="/invoices">
       <div class="page-header">
         <div>
-          <h1 style="margin-bottom: 0.25rem;">Invoice {invoice.invoiceNumber}</h1>
+          <h1 style="margin-bottom: 0.25rem;">
+            Invoice {invoice.invoiceNumber}
+            {" "}<StatusBadge status={invoiceStatus} />
+          </h1>
           <p style="margin: 0; font-size: 0.875rem;">
             <span class="badge">{invoice.currency ?? "ZAR"}</span>
             {" · "}Issued {new Date(invoice.createdAt).toLocaleDateString("en-ZA", { year: "numeric", month: "long", day: "numeric" })}
             {" · "}Due {new Date(invoice.dueDate).toLocaleDateString("en-ZA", { year: "numeric", month: "long", day: "numeric" })}
+            {invoice.paidAt && ` · Paid ${new Date(invoice.paidAt).toLocaleDateString("en-ZA", { year: "numeric", month: "long", day: "numeric" })}`}
           </p>
         </div>
         <div class="flex gap-2">
           <a href={`/invoices/${id}/edit`} class="btn btn-outline">Edit</a>
-          <a href={`/api/invoices/${id}/pdf`} class="btn btn-primary" target="_blank" rel="noopener">
+          <a href={`/api/invoices/${id}/pdf`} class="btn btn-outline" target="_blank" rel="noopener">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download PDF
           </a>
+          {invoiceStatus === "paid" && (
+            <a href={`/api/invoices/${id}/receipt/pdf`} class="btn btn-primary" target="_blank" rel="noopener">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Download Receipt
+            </a>
+          )}
           <a href="/invoices" class="btn btn-ghost">Back</a>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <span style="font-size: 0.875rem; font-weight: 600;">Change Status:</span>
+          {(["draft", "sent", "paid", "overdue", "cancelled"] as InvoiceStatus[])
+            .filter((s) => s !== invoiceStatus)
+            .map((s) => (
+              <button
+                type="button"
+                class={`btn btn-sm ${s === "paid" ? "btn-primary" : "btn-outline"}`}
+                data-status={s}
+                onclick={`updateStatus('${s}')`}
+              >
+                {s === "paid" ? "Mark as Paid" : s === "sent" ? "Mark as Sent" : s === "overdue" ? "Mark as Overdue" : s === "cancelled" ? "Cancel Invoice" : "Revert to Draft"}
+              </button>
+            ))}
         </div>
       </div>
 
@@ -350,6 +388,22 @@ app.get("/:id", async (c) => {
           </div>
         </div>
       </div>
+
+      <script dangerouslySetInnerHTML={{ __html: `
+        async function updateStatus(status) {
+          const res = await fetch('/api/invoices/${id}/status', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            const err = await res.json();
+            alert('Error: ' + (err.error || 'Failed to update status'));
+          }
+        }
+      `}} />
     </Layout>,
   );
 });

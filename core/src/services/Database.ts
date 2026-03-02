@@ -124,6 +124,10 @@ const initializeDatabase = (dbPath: string): SQLiteDatabase => {
     ON invoice_line_items(invoice_id)
   `)
 
+  // Migrations for new columns (safe to re-run — errors are ignored if column already exists)
+  try { sqlite.run(`ALTER TABLE invoices ADD COLUMN status TEXT NOT NULL DEFAULT 'draft'`) } catch {}
+  try { sqlite.run(`ALTER TABLE invoices ADD COLUMN paid_at TEXT`) } catch {}
+
   return sqlite
 }
 

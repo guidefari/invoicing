@@ -54,6 +54,8 @@ export interface Product {
   createdAt: string
 }
 
+export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled"
+
 export interface Invoice {
   id: number
   invoiceNumber: string
@@ -67,6 +69,8 @@ export interface Invoice {
   subtotal: number
   vatAmount: number
   total: number
+  status: InvoiceStatus
+  paidAt: string | null
 }
 
 export interface InvoiceLineItem {
