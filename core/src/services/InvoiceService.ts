@@ -5,7 +5,7 @@ import { ProductService } from "./ProductService.ts"
 import { BusinessInfoService } from "./BusinessInfoService.ts"
 import { BankAccountService } from "./BankAccountService.ts"
 import { invoices, invoiceLineItems } from "../db/drizzle-schema.ts"
-import type { Invoice, InvoiceLineItem, CreateInvoiceInput, UpdateInvoiceInput, CreateLineItemInput } from "../types/index.ts"
+import type { Invoice, InvoiceLineItem, InvoiceStatus, CreateInvoiceInput, UpdateInvoiceInput, CreateLineItemInput } from "../types/index.ts"
 
 export interface InvoiceWithLineItems extends Invoice {
   lineItems: InvoiceLineItem[]
@@ -18,6 +18,7 @@ export class InvoiceService extends Context.Tag("InvoiceService")<
     readonly get: (id: number) => Effect.Effect<InvoiceWithLineItems | undefined, DatabaseError>
     readonly create: (input: CreateInvoiceInput) => Effect.Effect<InvoiceWithLineItems, DatabaseError>
     readonly update: (id: number, input: UpdateInvoiceInput) => Effect.Effect<InvoiceWithLineItems, DatabaseError>
+    readonly updateStatus: (id: number, status: InvoiceStatus) => Effect.Effect<Invoice, DatabaseError>
     readonly getNextInvoiceNumber: () => Effect.Effect<string, DatabaseError>
   }
 >() {}
@@ -225,6 +226,32 @@ export const InvoiceServiceLive = Layer.effect(
             ...invoice,
             lineItems: lineItemsResult as InvoiceLineItem[],
           } as InvoiceWithLineItems
+        }),
+
+      updateStatus: (id: number, status: InvoiceStatus) =>
+        Effect.gen(function* () {
+          const paidAt = status === "paid" ? new Date().toISOString() : null
+
+          yield* Effect.try({
+            try: () =>
+              database.db
+                .update(invoices)
+                .set({ status, paidAt })
+                .where(eq(invoices.id, id))
+                .run(),
+            catch: (error) => new DatabaseError("Failed to update invoice status", error),
+          })
+
+          const invoice = yield* Effect.try({
+            try: () => database.db.select().from(invoices).where(eq(invoices.id, id)).get(),
+            catch: (error) => new DatabaseError("Failed to retrieve updated invoice", error),
+          })
+
+          if (!invoice) {
+            return yield* Effect.fail(new DatabaseError("Invoice not found"))
+          }
+
+          return invoice as Invoice
         }),
 
       update: (id: number, input: UpdateInvoiceInput) =>

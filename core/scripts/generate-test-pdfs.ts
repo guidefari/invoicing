@@ -1,7 +1,7 @@
 import puppeteer from "puppeteer"
 import { writeFile, mkdir } from "node:fs/promises"
 import { join } from "node:path"
-import { generateInvoiceHTML } from "../src/templates/invoice-template.ts"
+import { generateInvoiceHTML, generateReceiptHTML } from "../src/templates/invoice-template.ts"
 import type { InvoiceTemplateData } from "../src/templates/invoice-template.ts"
 import type { BankAccount, BusinessInfo, Customer, Invoice, InvoiceLineItem } from "../src/types/index.ts"
 
@@ -51,6 +51,8 @@ const invoice: Invoice = {
   subtotal: 45000,
   vatAmount: 6750,
   total: 51750,
+  status: "sent",
+  paidAt: null,
 }
 
 const lineItems: InvoiceLineItem[] = [
@@ -126,43 +128,66 @@ const eurInvoice: Invoice = {
   total: 2500,
   vatRate: null,
   notes: "Payment via IBAN transfer only.",
+  status: "overdue",
+  paidAt: null,
 }
 
-const fixtures: Array<{ name: string; data: InvoiceTemplateData }> = [
+const paidInvoice: Invoice = {
+  ...invoice,
+  invoiceNumber: "INV-2024-0040",
+  status: "paid",
+  paidAt: "2024-06-15T10:30:00.000Z",
+}
+
+const paidEurInvoice: Invoice = {
+  ...eurInvoice,
+  invoiceNumber: "INV-2024-0041",
+  status: "paid",
+  paidAt: "2024-06-18T09:00:00.000Z",
+}
+
+type Fixture = { name: string; data: InvoiceTemplateData; template: "invoice" | "receipt" }
+
+const fixtures: Fixture[] = [
+  // — Invoice fixtures —
   {
-    name: "local-account-zar",
-    data: {
-      invoice,
-      lineItems,
-      customer,
-      businessInfo,
-      bankAccount: localBankAccount,
-    },
+    name: "invoice-local-account-zar",
+    template: "invoice",
+    data: { invoice, lineItems, customer, businessInfo, bankAccount: localBankAccount },
   },
   {
-    name: "iban-account-eur",
-    data: {
-      invoice: eurInvoice,
-      lineItems,
-      customer,
-      businessInfo,
-      bankAccount: ibanBankAccount,
-    },
+    name: "invoice-iban-account-eur",
+    template: "invoice",
+    data: { invoice: eurInvoice, lineItems, customer, businessInfo, bankAccount: ibanBankAccount },
   },
   {
-    name: "no-bank-account-fallback",
-    data: {
-      invoice,
-      lineItems,
-      customer,
-      businessInfo,
-      bankAccount: undefined,
-    },
+    name: "invoice-no-bank-account-fallback",
+    template: "invoice",
+    data: { invoice, lineItems, customer, businessInfo, bankAccount: undefined },
+  },
+  // — Receipt fixtures —
+  {
+    name: "receipt-zar-with-vat",
+    template: "receipt",
+    data: { invoice: paidInvoice, lineItems, customer, businessInfo, bankAccount: localBankAccount },
+  },
+  {
+    name: "receipt-eur-no-vat",
+    template: "receipt",
+    data: { invoice: paidEurInvoice, lineItems, customer, businessInfo, bankAccount: ibanBankAccount },
   },
 ]
 
+const CHROME_PATH =
+  process.env.PUPPETEER_EXECUTABLE_PATH ??
+  "/root/.cache/ms-playwright/chromium-1194/chrome-linux/chrome"
+
 async function generatePDF(html: string, outPath: string) {
-  const browser = await puppeteer.launch({ headless: true })
+  const browser = await puppeteer.launch({
+    headless: true,
+    executablePath: CHROME_PATH,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  })
   try {
     const page = await browser.newPage()
     await page.setContent(html, { waitUntil: "networkidle0" })
@@ -180,7 +205,9 @@ async function generatePDF(html: string, outPath: string) {
 await mkdir(OUT_DIR, { recursive: true })
 
 for (const fixture of fixtures) {
-  const html = generateInvoiceHTML(fixture.data)
+  const html = fixture.template === "receipt"
+    ? generateReceiptHTML(fixture.data)
+    : generateInvoiceHTML(fixture.data)
   const htmlPath = join(OUT_DIR, `${fixture.name}.html`)
   const pdfPath = join(OUT_DIR, `${fixture.name}.pdf`)
 
