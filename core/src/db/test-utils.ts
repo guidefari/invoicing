@@ -83,6 +83,8 @@ const createTestDatabase = (): SQLiteDatabase => {
       subtotal REAL NOT NULL,
       vat_amount REAL NOT NULL,
       total REAL NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft',
+      paid_at TEXT,
       FOREIGN KEY (customer_id) REFERENCES customers (id)
     )
   `)

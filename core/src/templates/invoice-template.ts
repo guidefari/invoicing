@@ -33,7 +33,7 @@ export const formatDate = (dateString: string): string => {
 }
 
 export const generateReceiptHTML = (data: InvoiceTemplateData): string => {
-  const { invoice, lineItems, customer, businessInfo, bankAccount } = data
+  const { invoice, lineItems, customer, businessInfo } = data
   const cur = invoice.currency ?? "ZAR"
   const fmt = (amount: number) => formatCurrency(amount, cur)
   const receiptNumber = invoice.invoiceNumber.replace(/^INV-/, "RCT-")
