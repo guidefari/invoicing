@@ -190,7 +190,7 @@ app.get("/new", async (c) => {
             <td><select class="product-select">\${productOptions}</select></td>
             <td><input type="text" class="desc-input" placeholder="Description" required></td>
             <td><input type="number" class="qty-input" value="1" step="any" min="0.01" required></td>
-            <td><input type="number" class="price-input" step="0.01" min="0" placeholder="0.00" required></td>
+            <td><input type="number" class="price-input" step="0.01" placeholder="0.00" required></td>
             <td style="padding: 0.5rem;">
               <button type="button" class="btn btn-ghost btn-sm remove-btn" aria-label="Remove row" style="padding: 0.375rem; color: var(--danger);">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
@@ -479,7 +479,7 @@ app.get("/:id/edit", async (c) => {
               <td><select class="product-select">\${productOptions}</select></td>
               <td><input type="text" class="desc-input" value="\${item ? item.description.replace(/"/g, '&quot;') : ''}" placeholder="Description" required></td>
               <td><input type="number" class="qty-input" value="\${item ? item.quantity : 1}" step="any" min="0.01" required></td>
-              <td><input type="number" class="price-input" value="\${item ? item.unitPrice : ''}" step="0.01" min="0" placeholder="0.00" required></td>
+              <td><input type="number" class="price-input" value="\${item ? item.unitPrice : ''}" step="0.01" placeholder="0.00" required></td>
               <td style="padding: 0.5rem;">
                 <button type="button" class="btn btn-ghost btn-sm remove-btn" aria-label="Remove row" style="padding: 0.375rem; color: var(--danger);">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
