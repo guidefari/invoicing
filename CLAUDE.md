@@ -1,5 +1,7 @@
 - read `/Users/guidefari/source/oss/opentui/packages/solid/examples` for ui code examples.
 
+- Database schema canon: treat `core/src/db/drizzle-schema.ts` as the source of truth. Keep `core/src/services/Database.ts` bootstrap SQL and `core/src/db/test-utils.ts` test schema aligned with it whenever schema fields change.
+
 Default to using Bun instead of Node.js.
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`

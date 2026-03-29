@@ -85,6 +85,7 @@ const createTestDatabase = (): SQLiteDatabase => {
       total REAL NOT NULL,
       status TEXT NOT NULL DEFAULT 'draft',
       paid_at TEXT,
+      FOREIGN KEY (bank_account_id) REFERENCES bank_accounts (id),
       FOREIGN KEY (customer_id) REFERENCES customers (id)
     )
   `)

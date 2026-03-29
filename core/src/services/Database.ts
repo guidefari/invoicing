@@ -52,7 +52,7 @@ const initializeDatabase = (dbPath: string): SQLiteDatabase => {
       bank_name TEXT NOT NULL,
       account_number TEXT NOT NULL,
       branch_code TEXT NOT NULL,
-      iban TEXT
+      default_vat_rate REAL
     )
   `)
 
@@ -95,6 +95,9 @@ const initializeDatabase = (dbPath: string): SQLiteDatabase => {
       subtotal REAL NOT NULL,
       vat_amount REAL NOT NULL,
       total REAL NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft',
+      paid_at TEXT,
+      FOREIGN KEY (bank_account_id) REFERENCES bank_accounts (id),
       FOREIGN KEY (customer_id) REFERENCES customers (id)
     )
   `)
@@ -125,6 +128,7 @@ const initializeDatabase = (dbPath: string): SQLiteDatabase => {
   `)
 
   // Migrations for new columns (safe to re-run — errors are ignored if column already exists)
+  try { sqlite.run(`ALTER TABLE business_info ADD COLUMN default_vat_rate REAL`) } catch {}
   try { sqlite.run(`ALTER TABLE invoices ADD COLUMN status TEXT NOT NULL DEFAULT 'draft'`) } catch {}
   try { sqlite.run(`ALTER TABLE invoices ADD COLUMN paid_at TEXT`) } catch {}
 
