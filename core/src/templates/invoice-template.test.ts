@@ -47,6 +47,8 @@ const baseInvoice: Invoice = {
   subtotal: 1000,
   vatAmount: 150,
   total: 1150,
+  status: "sent",
+  paidAt: null,
 }
 
 const baseLineItem: InvoiceLineItem = {

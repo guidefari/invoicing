@@ -80,6 +80,8 @@ export const invoices = sqliteTable(
     subtotal: real("subtotal").notNull(),
     vatAmount: real("vat_amount").notNull(),
     total: real("total").notNull(),
+    status: text("status").notNull().default("draft"),
+    paidAt: text("paid_at"),
   },
   (table) => ({
     customerIdx: index("idx_invoices_customer").on(table.customerId),
