@@ -77,6 +77,7 @@ export interface InvoiceLineItem {
   id: number
   invoiceId: number
   productId: number | null
+  productName?: string | null
   description: string
   quantity: number
   unitPrice: number
@@ -157,4 +158,3 @@ export interface CreateLineItemInput {
 }
 
 export interface UpdateInvoiceInput extends CreateInvoiceInput {}
-

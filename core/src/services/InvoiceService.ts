@@ -4,7 +4,7 @@ import { Database, DatabaseError } from "./Database.ts"
 import { ProductService } from "./ProductService.ts"
 import { BusinessInfoService } from "./BusinessInfoService.ts"
 import { BankAccountService } from "./BankAccountService.ts"
-import { invoices, invoiceLineItems } from "../db/drizzle-schema.ts"
+import { invoices, invoiceLineItems, products } from "../db/drizzle-schema.ts"
 import type { Invoice, InvoiceLineItem, InvoiceStatus, CreateInvoiceInput, UpdateInvoiceInput, CreateLineItemInput } from "../types/index.ts"
 
 export interface InvoiceWithLineItems extends Invoice {
@@ -49,6 +49,28 @@ export const InvoiceServiceLive = Layer.effect(
         return `INV-${String(nextNum).padStart(3, "0")}`
       })
 
+    const getInvoiceLineItems = (invoiceId: number) =>
+      Effect.try({
+        try: () =>
+          database.db
+            .select({
+              id: invoiceLineItems.id,
+              invoiceId: invoiceLineItems.invoiceId,
+              productId: invoiceLineItems.productId,
+              productName: products.name,
+              description: invoiceLineItems.description,
+              quantity: invoiceLineItems.quantity,
+              unitPrice: invoiceLineItems.unitPrice,
+              lineTotal: invoiceLineItems.lineTotal,
+              additionalNotes: invoiceLineItems.additionalNotes,
+            })
+            .from(invoiceLineItems)
+            .leftJoin(products, eq(invoiceLineItems.productId, products.id))
+            .where(eq(invoiceLineItems.invoiceId, invoiceId))
+            .all() as InvoiceLineItem[],
+        catch: (error) => new DatabaseError("Failed to get invoice line items", error),
+      })
+
     return {
       getNextInvoiceNumber,
 
@@ -68,15 +90,7 @@ export const InvoiceServiceLive = Layer.effect(
 
           if (!invoice) return undefined
 
-          const lineItemsResult = yield* Effect.try({
-            try: () =>
-              database.db
-                .select()
-                .from(invoiceLineItems)
-                .where(eq(invoiceLineItems.invoiceId, id))
-                .all(),
-            catch: (error) => new DatabaseError("Failed to get invoice line items", error),
-          })
+          const lineItemsResult = yield* getInvoiceLineItems(id)
 
           return {
             ...invoice,
@@ -212,15 +226,9 @@ export const InvoiceServiceLive = Layer.effect(
             })
           }
 
-          const lineItemsResult = yield* Effect.try({
-            try: () =>
-              database.db
-                .select()
-                .from(invoiceLineItems)
-                .where(eq(invoiceLineItems.invoiceId, invoice.id))
-                .all(),
-            catch: (error) => new DatabaseError("Failed to get created invoice line items", error),
-          })
+          const lineItemsResult = yield* getInvoiceLineItems(invoice.id).pipe(
+            Effect.mapError((error) => new DatabaseError("Failed to get created invoice line items", error))
+          )
 
           return {
             ...invoice,
@@ -381,15 +389,9 @@ export const InvoiceServiceLive = Layer.effect(
             return yield* Effect.fail(new DatabaseError("Failed to retrieve updated invoice"))
           }
 
-          const lineItemsResult = yield* Effect.try({
-            try: () =>
-              database.db
-                .select()
-                .from(invoiceLineItems)
-                .where(eq(invoiceLineItems.invoiceId, id))
-                .all(),
-            catch: (error) => new DatabaseError("Failed to get updated invoice line items", error),
-          })
+          const lineItemsResult = yield* getInvoiceLineItems(id).pipe(
+            Effect.mapError((error) => new DatabaseError("Failed to get updated invoice line items", error))
+          )
 
           return {
             ...invoice,

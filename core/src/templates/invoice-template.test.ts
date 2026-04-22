@@ -55,6 +55,7 @@ const baseLineItem: InvoiceLineItem = {
   id: 1,
   invoiceId: 1,
   productId: null,
+  productName: null,
   description: "Consulting",
   quantity: 1,
   unitPrice: 1000,
@@ -157,5 +158,24 @@ describe("generateInvoiceHTML - bank details rendering", () => {
     expect(html).toContain("FNB")
     expect(html).toContain("111111111")
     expect(html).toContain("250655")
+  })
+
+  test("renders product name and description for product-backed items", () => {
+    const html = generateInvoiceHTML({
+      ...baseData(undefined),
+      lineItems: [{ ...baseLineItem, productId: 2, productName: "Admin", description: "Billed by the hour" }],
+    })
+
+    expect(html).toContain("Admin")
+    expect(html).toContain("Billed by the hour")
+  })
+
+  test("uses description for custom items without a product name", () => {
+    const html = generateInvoiceHTML({
+      ...baseData(undefined),
+      lineItems: [{ ...baseLineItem, productId: null, productName: null, description: "Custom work" }],
+    })
+
+    expect(html).toContain("Custom work")
   })
 })

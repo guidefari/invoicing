@@ -38,6 +38,9 @@ export const generateReceiptHTML = (data: InvoiceTemplateData): string => {
   const fmt = (amount: number) => formatCurrency(amount, cur)
   const receiptNumber = invoice.invoiceNumber.replace(/^INV-/, "RCT-")
   const paymentDate = invoice.paidAt ? formatDate(invoice.paidAt) : formatDate(new Date().toISOString())
+  const itemLabel = (item: InvoiceLineItem) => item.productName || item.description
+  const itemSubLabel = (item: InvoiceLineItem) =>
+    item.productName && item.description !== item.productName ? item.description : null
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -144,7 +147,8 @@ export const generateReceiptHTML = (data: InvoiceTemplateData): string => {
               (item) => `
             <tr>
               <td>
-                <div class="item-description">${item.description}</div>
+                <div class="item-description">${itemLabel(item)}</div>
+                ${itemSubLabel(item) ? `<div class="item-notes">${itemSubLabel(item)}</div>` : ""}
                 ${item.additionalNotes ? `<div class="item-notes">${item.additionalNotes}</div>` : ""}
               </td>
               <td class="right">${item.quantity}</td>
@@ -208,6 +212,9 @@ export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
   const { invoice, lineItems, customer, businessInfo, bankAccount } = data
   const cur = invoice.currency ?? "ZAR"
   const fmt = (amount: number) => formatCurrency(amount, cur)
+  const itemLabel = (item: InvoiceLineItem) => item.productName || item.description
+  const itemSubLabel = (item: InvoiceLineItem) =>
+    item.productName && item.description !== item.productName ? item.description : null
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -313,7 +320,8 @@ export const generateInvoiceHTML = (data: InvoiceTemplateData): string => {
               (item) => `
             <tr>
               <td>
-                <div class="item-description">${item.description}</div>
+                <div class="item-description">${itemLabel(item)}</div>
+                ${itemSubLabel(item) ? `<div class="item-notes">${itemSubLabel(item)}</div>` : ""}
                 ${item.additionalNotes ? `<div class="item-notes">${item.additionalNotes}</div>` : ""}
               </td>
               <td class="right">${item.quantity}</td>
